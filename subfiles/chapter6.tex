@@ -1,0 +1,619 @@
+\chapter{Formal Relational Languages: The Algebra and Calculus}
+In dit hoofdstuk behandelen we twee formele talen voor het relationele model: \textbf{relationele algebra} en \textbf{relationele calculus}.
+
+\section{Unary Relational Operations: SELECT \& PROJECT}
+\subsection{The SELECT Operation}
+De \textsc{select}-operatie wordt gebruikt om een subset van tupels uit een extensie op te vragen die voldoen aan een bepaalde conditie. Intu\"itief kan het gezien worden als een filter. We beginnen met een voorbeeld om de werknemers op te vragen die meer verdienen dan 3000.
+\vspace{-2mm}
+\[ \sigma_{\,\text{Salary}\,>\,3000}(\textsc{employee}) \]
+Een generiek \textsc{select}-statement uit een database ziet er als volgt uit.
+\vspace{-2mm}
+\[ \sigma_F(R) = \sigma_\text{{\textless}conditie{\textgreater}}(R) \]
+Het sigma-symbool ($\sigma$) wordt hier gebruikt om \textsc{select} aan te duiden. Het \textbf{selectiecriterium} $F$ (of conditie) is een logische formule die attributen uit de relatie $R$ gebruikt. Een generieke conditie heeft \'e\'en van de volgende vormen.
+\vspace{-2mm}
+\begin{align*}
+&\text{{\textless}attribuutnaam{\textgreater} {\textless}vergelijking{\textgreater} {\textless}constante{\textgreater}} \\
+&\text{{\textless}attribuutnaam{\textgreater} {\textless}vergelijking{\textgreater} {\textless}andere attribuutnaam{\textgreater}}
+\end{align*}
+De {\textless}vergelijking{\textgreater} gebruikt meestal een van de volgende operatoren: $\{=, <, >, \leqslant, \geqslant, \neq \}$. Condities kunnen samengesteld worden met de operatoren $\{\wedge, \vee, \neg\}$ om meervoudige formules te maken.
+
+~
+
+\noindent De \textsc{select}-operator is \textbf{unair}, hij wordt dus toegepast op een enkele relatie. De \textsc{select}-operator is ook \textbf{commutatief}, voor het resultaat maakt het dus niet uit in welke volgorde ze uitgevoerd worden. Dit kan wel een verschil maken in performantie. Er geldt dus:
+\vspace{-2mm}
+\[ \sigma_{C_1} \left( \sigma_{C_2} \left( \dots \left( \sigma_{C_n} \left( r \right) \right) \dots \right) \right) = \sigma_{C_1 \,\wedge\, C_2 \,\wedge\, \dots \,\wedge\, C_n}(r) \]
+In SQL wordt de \textsc{select}-conditie meestal gespecifieerd in het \textsc{where}-gedeelte. Hieronder staat een voorbeeld van een \textsc{select}-operatie en de bijhorende SQL-query.
+\vspace{-2mm}
+\[ \sigma_{(\text{Dno}\,=\,4) \; \wedge \; (\text{Salary}\,>\,25000)}(\textsc{employee}) \]
+\indent \textbf{SELECT} *\\
+\indent \textbf{FROM} EMPLOYEE\\
+\indent	\textbf{WHERE} $\textit{Dno}=4$ \textbf{AND} $\textit{Salary}>25000$
+
+
+\subsection{The PROJECT Operation}
+Als we een relatie als een tabel voorstellen, kiest de \textsc{select}-operatie enkele \textit{rijen} (tupels) hieruit.
+
+De \textsc{project}-operatie daarentegen selecteert bepaalde \textbf{kolommen}. Dus als we enkel ge\"interes-seerd zijn in bepaalde attributen van een relatie, gebruiken we de \textsc{project}-operatie. Om bijvoorbeeld de voornamen en lonen van alle werknemers op te vragen, gebruiken we de volgende query.
+\vspace{-2mm}
+\[ \pi_{\,\text{Fname, Salary}}(\textsc{employee}) \]
+Hierbij is $\pi$ dus het symbool voor \textsc{project}. De generieke vorm van een \textsc{project}-operatie heeft de volgende vorm:
+\vspace{-2mm}
+\[ \pi_X(R) = \pi_\text{{\textless}attributenlijst{\textgreater}}(R) \]
+De attributenlijst is de lijst van attributen die we willen opvragen van de relatie $R$, met komma's tussen de individuele attributen.
+
+Als er attributen opgevraagd worden die geen \textit{key} zijn, is de kans groot dat er duplicaten optreden. De \textsc{project}-operatie verwijdert deze duplicaten en geeft dus een lijst met \textbf{unieke tupels} terug. Moesten duplicaten niet verwijderd worden, zou het resultaat geen tupel zijn maar een \textit{multiset} of \textit{bag}. In het formele model is dit niet toegelaten, in SQL wel.
+
+~
+
+\noindent De \textsc{project}-operatie is niet commutatief, er geldt dat $\pi_X(\pi_Y(r))$ enkel gedefinieerd is als $X \subseteq Y$. De \textsc{project}-operatie is dus idempotent, enkel de laatste (buitenste) projectie van opeenvolgende projecties moet uitgevoerd worden. Dit is makkelijk in te zien met de volgende query's, de volgende query vraagt enkel de voornamen op van de werknemers.
+\vspace{-2mm}
+\[ \pi_{\,\text{Fname}}(\pi_\text{Bdate, Fname}(\textsc{employee})) \]
+De volgende query is ongeldig omdat \textit{``Bdate''} niet voorkomt in de tupels van voornamen.
+\vspace{-2mm}
+\[ \pi_{\,\text{Bdate, Fname}}(\pi_\text{Fname}(\textsc{employee})) \]
+Hieronder staat een voorbeeld van een \textsc{project}-operatie en de bijhorende SQL-query. 
+\vspace{-2mm}
+\[ \pi_{\,\text{Bdate, Salary}}(\textsc{employee}) \]
+\indent \textbf{SELECT DISTINCT} \textit{Bdate}, \textit{Salary}\\
+\indent	\textbf{FROM} EMPLOYEE
+
+~
+
+\noindent Merk op dat als we \textsc{distinct} uit de SQL-query weglaten, de duplicate tupels niet verwijderd worden en we dus niet hetzelfde resultaat krijgen als in de formele relationele algebra.
+
+
+\subsection{Sequences of Operations and the RENAME Operation}
+In de praktijk willen we meestal resultaten van meerdere queries. Dit kan op 2 manieren gebeuren: ofwel alle \textbf{queries nesten} ofwel gebruik maken van \textbf{tussenresultaten} en daar de opeenvolgende queries op uitvoeren. In het tweede geval moeten we namen geven aan de tussenresultaten.
+
+Om bijvoorbeeld de voornaam, achternaam en het salaris op te vragen van alle werknemers in departement 5, kunnen we als volgt te werk gaan:
+\vspace{-2mm}
+\[\pi_{\,\text{Fname, Lname, Salary}}(\sigma_{\,\text{Dno}\,=\,5}(\textsc{employee}))\]
+\noindent Door met tussenresultaten te werken, kan men ook het volgende doen:
+\vspace{-2mm}
+\begin{align*}
+&\textsc{dep5\_emps} \leftarrow \sigma_{\,\text{Dno}\,=\,5}(\textsc{employee}) \\
+&\textsc{result} \leftarrow \pi_{\,\text{Fname, Lname, Salary}}(\textsc{dep5\_emps})
+\end{align*}
+De tweede manier (met tussenresultaten) is beter leesbaar. Deze manier kunnen we ook gebruiken om de attribuutnamen in het resultaat een andere naam te geven. Dit gaat als volgt.
+\vspace{-2mm}\begin{align*}
+&\textsc{temp} \leftarrow \sigma_{\,\text{Dno}\,=\,5}(\textsc{employee}) \\
+&R\,(\text{FirstName, LastName, Salary}) \leftarrow \pi_{\,\text{Fname, Lname, Salary}}(\textsc{temp})
+\end{align*}
+We kunnen ook een formele \textsc{rename}-operatie invoeren, deze heeft de volgende generieke vorm.
+\vspace{-2mm}
+\[ \rho_{\,S(B_1,\dots,B_n)}(R) = \rho_S(R) = \rho_{\,(B_1,\dots,B_n)}(R) \]
+Hierbij is $R$ een relatie van graad $n$, $S$ de nieuwe naam voor de relatie, $B_i$ de nieuwe attribuutnamen en $\rho$ het symbool van de \textsc{rename}-operatie. In de generieke vorm hierboven hernoemen we in de eerste term zowel de relatie als de attribuutnamen, in de tweede term enkel de relatie en in de derde term enkel de attributen.
+
+~
+
+\noindent In SQL gebeurt de \textsc{rename}-operatie met de \textsc{as}-functie.
+
+\vspace{2mm}
+\indent \textbf{SELECT} E.\textit{Fname} \textbf{AS} \textit{FirstName}, E.\textit{Lname} \textbf{AS} \textit{LastName}, E.\textit{Salary} \textbf{AS} \textit{Salary\\}
+\indent \textbf{FROM} EMPLOYEE \textbf{AS} E\\
+\indent \textbf{WHERE} E.$\textit{Dno}=5$
+
+
+
+\section{Relational Algebra Operations from Set Theory}
+\subsection{The UNION, INTERSECTION, and MINUS Operations}
+De volgende groep van operaties uit de relationele algebra, zijn de standaard wiskundige verzamelingsoperatoren.
+
+Om bijvoorbeeld de \textit{``Ssn''}-nummers op te vragen van de werknemers die in departement 5 werken of de werknemers die baas zijn van een werknemer uit departement 5, kunnen we de \textsc{union} (unie) als volgt gebruiken.
+\vspace{-5mm}
+\begin{align*}
+&\textsc{dep5\_emps} \leftarrow \sigma_{\,\text{Dno}\,=\,5} (\textsc{employee})\\
+&\textsc{result1} \leftarrow \pi_{\,\text{Ssn}} (\textsc{dep5\_emps})\\
+&\textsc{result2}(\textit{Ssn}) \leftarrow \pi_{\,\text{Super\_ssn}} (\textsc{dep5\_emps})\\
+&\textsc{result} \leftarrow \textsc{result1} \cup \textsc{result2}
+\end{align*}
+\textsc{result1} bevat de \textit{``Ssn''}-nummers van alle werknemers uit departement 5, \textsc{result2} bevat alle \textit{``Ssn''}-nummers van de bazen van werknemers uit departement 5. \textsc{result} bevat dan de unie van beide resultaten (zonder duplicaten).
+
+~
+
+\noindent Naast \textsc{union} bestaan er ook \textsc{intersection} (doorsnede) en \textsc{set difference} (verschil), ook wel \textsc{minus} of \textsc{except} genoemd. Dit zijn binaire operaties die enkel gebruikt worden op twee verzamelingen van \textbf{hetzelfde type}. Dit wordt ook wel \textbf{union compatibility} of \textbf{type compatibility} genoemd. Twee relaties worden compatibel genoemd als ze dezelfde graad hebben en als de corresponderende attributen hetzelfde domein hebben.
+
+We nemen de conventie aan dat de resultaatverzameling dezelfde attribuutnamen gebruikt als de eerste relatie waarop de operatie toegepast wordt.
+
+Het is makkelijk in te zien dat \textsc{union} en \textsc{intersection} commutatief en associatief zijn. \textsc{set difference} is dat over het algemeen niet.
+
+~
+
+\noindent In SQL komen \textsc{union}, \textsc{intersect} en \textsc{except} overeen met de eerder beschreven operaties. Daarnaast bestaan er in SQL ook \textsc{union all}, \textsc{intersect all} en \textsc{except all}, deze verwijderen de duplicaten niet.
+
+
+\subsection{The CARTESIAN PRODUCT (CROSS PRODUCT) Operation}
+Het Carthesisch product of kruisproduct ($\times$) is ook een binaire operatie, maar de twee verzamelingen moeten niet \textit{union compatible} zijn, in tegenstelling tot de eerder besproken operaties.
+
+Als we bijvoorbeeld $A \times B$ uitvoeren, wordt elke tupel uit $A$ gecombineerd met elke tupel uit $B$. Stel $A$ bevat $n$ elementen en $B$ bevat $m$ elementen, dan zal het resultaat van het kruisproduct exact $m \cdot n$ tupels bevatten.
+
+Formeler: een kruisproduct $Q = R \times S$ heeft als schema $Q(A_1, \dots, A_n, B_1, \dots, B_m)$ en bevat elke combinatie van tupels uit $R$ en $S$.
+
+~
+
+\noindent Voorbeeld: op de tabellen \textsc{voornamen} en \textsc{achternamen} voeren we de volgende operatie uit om de tabel \textsc{resultaat} te bekomen.
+\vspace{-2mm}
+\[ \textsc{resultaat} \leftarrow \textsc{voornamen} \times \textsc{achternamen} \]
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\multicolumn{2}{|c|}{\textbf{VOORNAMEN}} \\
+\hline
+\textit{Voorn\_id} & \textit{Voorn} \\ \hline
+1 & George \\ \hline
+2 & Albert \\
+\hline
+\end{tabular}
+\begin{tabular}{|c|c|}
+\hline
+\multicolumn{2}{|c|}{\textbf{ACHTERNAMEN}} \\
+\hline
+\textit{Achtern\_id} & \textit{Achtern} \\ \hline
+1 & Orwell \\ \hline
+2 & Hoffman \\
+\hline
+\end{tabular}
+$\;\;\Longrightarrow\;\;$
+\begin{tabular}{|c|c|c|c|}
+\hline
+\multicolumn{4}{|c|}{\textbf{RESULTAAT}} \\
+\hline
+\textit{Voorn\_id} & \textit{Voorn} & \textit{Achtern\_id} & \textit{Achtern}\\ \hline
+1 & George & 1 & Orwell\\ \hline
+1 & George & 2 & Hoffman\\ \hline
+2 & Albert & 1 & Orwell\\ \hline
+2 & Albert & 2 & Hoffman\\
+\hline
+\end{tabular}
+\end{center}
+We zien meteen dat het resultaat op zich geen betekenis heeft. Over het algemeen is ze enkel nuttig als we nadien alle ongeldige combinaties wegfilteren, dit doen we meestal door de \textit{keys} te vergelijken.
+\vspace{-2mm}
+\[ \textsc{echt\_resultaat} \leftarrow \sigma_{\,\text{Voorn\_id} \,=\, \text{Achtern\_id}}(\textsc{resultaat}) \]
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+\multicolumn{4}{|c|}{\textbf{ECHT\_RESULTAAT}} \\
+\hline
+\textit{Voorn\_id} & \textit{Voorn} & \textit{Achtern\_id} & \textit{Achtern}\\ \hline
+1 & George & 1 & Orwell\\ \hline
+2 & Albert & 2 & Hoffman\\
+\hline
+\end{tabular}
+\end{center}
+Omdat het Carthesisch product zonder de \textsc{select}-operatie niet zo nuttig is (omdat er dan duplicaten bestaan), heeft men de \textsc{join}-operatie ontwikkeld, deze combineert direct de 2 operaties. In de volgende sectie gaan we hier dieper op in.
+
+In SQL noemt men het Carthesisch product \textsc{cross join}.
+
+
+
+\section{Binary Relational Operations: JOIN and DIVISION}
+\subsection{The JOIN Operation}
+De \textsc{join}-operatie (symbool: $\bowtie$) wordt gebruikt om gerelateerde tupels van 2 relaties samen te voegen tot `grotere' tupels. \textsc{join} is eigenlijk een uitvoering van het Carthesisch product, gevolgd door een selectie. We zullen het nut aantonen door middel van een voorbeeld:
+\vspace{-2mm}
+\begin{align*}
+&\textsc{dept\_mgr} \leftarrow \textsc{department} \,\bowtie_{\,\text{Mgr\_ssn} \,=\, \text{Ssn}} \textsc{employee}\\
+&\textsc{result} \leftarrow \pi_{\,\text{Dname, Lname, Fname}}(\textsc{dept\_mgr})
+\end{align*}
+In de eerste query worden de tabellen \textsc{departement} en \textsc{employee} gejoind met de conditie $\textit{Mgr\_ssn}=\textit{Ssn}$. We krijgen dus in \textsc{dept\_mgr} een lijst van alle departementen met voor elk departement ook de departementsmanager. Daarna volgt een \textsc{rename}-operatie.
+
+Het verschil tussen het Carthesisch product ($\times$) en de \textsc{join}-operatie ($\bowtie$) is dat bij de \textsc{join}-operatie direct een conditie meegegeven kan worden.
+
+~
+
+\noindent Een generieke \textsc{join}-operatie heeft de volgende vorm (met selectiecriterium $F$ en relaties $R$, $S$):
+\vspace{-2mm}
+\[ R \,\bowtie_F S = R \,\bowtie_{\text{{\textless}conditie{\textgreater}}} S = \sigma_F(R \times S) \]
+Stel $R$ heeft $n$ tupels en $S$ heeft $m$ tupels, dan zal de \textsc{join} tussen $R$ en $S$ als resultaat $n+m$ tupels hebben. Ook hier kunnen $\{ \wedge, \vee, \neg \}$ gebruikt worden om condities samen te voegen.
+
+Een conditie is een \textbf{theta-join} als in $F = C_1 \wedge \dots \wedge C_n$ elke $C_k$ van de vorm $A_i \; \theta \; B_j$ is. Hierbij geldt dat $\theta \in \{=, <, >, \leqslant, \geqslant, \neq \}$ en dat $\text{dom}(A_i) = \text{dom}(B_j)$.
+
+Tupels waarvan een \textsc{join}-attribuut \texttt{NULL} is, zullen niet worden opgenomen in het resultaat.
+
+
+\subsection{Variations of JOIN: The EQUIJOIN and NATURAL JOIN}
+De meest gebruikte \textsc{join}-condities zijn deze met enkel gelijkheidscondities $C_k$ in $F$. Deze noemen we een \textsc{equijoin}. In het resultaat van een \textsc{equijoin} zal er in elke tupel minstens 1 paar attributen gelijke waarden hebben.
+
+~
+
+\noindent Als deze attributen die gelijk moeten zijn dezelfde naam hebben, kunnen we gebruik maken van een \textsc{natural join}. Hierbij moet er geen \textsc{join}-conditie meegegeven worden, maar zal er gejoind worden op attributen met \textbf{dezelfde naam}. Als de attributen waarop we willen joinen niet dezelfde naam hebben, moet er eerst een \textsc{rename}-operatie uitgevoerd worden.
+
+Een \textsc{natural join} is dus gelijk aan het uitvoeren van een \textsc{equijoin} waarna men de overtollige attributen weglaat. Dus per voorwaarde $A_i = B_j$ wordt enkel $A_i$ of $B_j$ behouden.
+
+De generieke notatie van een \textsc{natural join} is als volgt:
+\vspace{-2mm}
+\[ R \,*_F S \]
+Als $X$ en $Y$ attribuutlijsten zijn van gelijke lengte, dan kan men de \textsc{natural join} ook vereenvoudigd noteren als $R \,*_{X,Y} S$. De conditie is dan $X_1 = Y_1 \wedge \dots \wedge X_k = Y_k$. Enkel de attributen in $X$ blijven behouden na de join.
+
+Een andere vereenvoudigde notatie is $R * S$ waarbij de lijsten $X$ en $Y$ impliciet zijn: ze bevatten alle attributen die dezelfde naam hebben in $R$ en $S$.
+
+~
+
+\noindent Als we bijvoorbeeld elke \textsc{project}-tupel willen joinen met elke \textsc{department}-tupel die het project controleert, kan dit met de volgende query:
+\vspace{-2mm}
+\[ \textsc{proj\_dept} \leftarrow \textsc{project} * \left(\rho_{\,\text{(Dname, Dnum, Mgr\_ssn, Mgr\_start\_date)}} \left( \textsc{department} \right) \right) \]
+Je kan zien dat er een \textsc{rename}-operatie uitgevoerd wordt: \textit{``Dnumber''} uit de \textsc{department}-relatie wordt hernoemd naar \textit{``Dnum''} zodat de attribuutnaam overeenkomt met die in \textsc{project}. Daarna wordt er een \textsc{natural join} uitgevoerd.
+
+Het attribuut \textit{``Dnum''} wordt hier het \textsc{join}-attribuut voor de \textsc{natural join} genoemd, omdat het het enige attribuut is met dezelfde naam in beide relaties. Als er in beide relaties geen attributen voorkomen met dezelfde naam zal het resultaat van een \textsc{natural join} leeg zijn.
+
+~
+
+\noindent Bovenstaande query had ook in 2 stappen uitgevoerd kunnen worden.
+\vspace{-2mm}
+\begin{align*}
+& \textsc{dept} \leftarrow \rho_{\,\text{(Dname, Dnum, Mgr\_ssn, Mgr\_start\_date)}}(\textsc{department}) \\
+& \textsc{proj\_dept} \leftarrow \textsc{project} * \textsc{dept}
+\end{align*}
+De \textsc{join}-operatie combineert dus data uit 2 relaties zodat gerelateerde informatie in 1 tabel getoond kan worden. Dit soort operaties noemt men ook \textbf{inner joins}.
+
+\textsc{join}-operaties kunnen ook gebeuren tussen meer dan 2 relaties, bijvoorbeeld:
+\vspace{-2mm}
+\[ \big( \textsc{project} \bowtie_{\,\text{Dnum} \,=\, \text{Dnumber}} \textsc{department} \big) \bowtie_{\,\text{Mgr\_ssn} \,=\, \text{Ssn}} \textsc{employee} \]
+
+
+\subsection{A Complete Set of Relational Algebra Operations}
+Het is aangetoond dat de set van relationele algebra operaties $\{\sigma,\pi,\cup,\rho,-,\times\}$ een \textbf{complete set} is. Dit wil zegen dat elke andere operatie uit de relationele algebra geschreven kan worden als een combinatie van elementen uit deze set.
+
+Bijvoorbeeld, de \textsc{intersection}-operatie kan uitgedrukt worden met \textsc{union} en \textsc{minus}.
+\vspace{-2mm}
+\[ R \cap S \equiv (R \cup S) - \big( \big(R-S) \cup (S-R) \big) \]
+Veel operaties uit de relationele algebra zijn dus niet strikt noodzakelijk maar zijn ingevoerd om het ingeven van queries makkelijker te maken.
+
+
+\subsection{The DIVISION Operation}
+De \textsc{division}-operatie heeft als symbool $\div$ en is zinvol voor een speciale vorm van queries.
+
+Een voorbeeld hiervan is \textit{``geef de namen van de werknemers die meewerken aan \textbf{alle} projecten waaraan John Smith werkt''}. Om deze query met de \textsc{division}-operatie neer te schrijven, doen we het volgende:
+\begin{enumerate}
+	\item We vragen de lijst op van projectnummers waaraan John Smith werkt.
+	\vspace{-2mm}
+	\begin{align*}
+	& \textsc{smith} \leftarrow \sigma_{\,\text{Fname} \,=\, \text{`John'} \; \wedge \; \text{Lname} \,=\, \text{`Smith'}} \;(\textsc{employee}) \\
+	& \textsc{smith\_pnos} \leftarrow \pi_{\,\text{Pno}} \;(\textsc{works\_on} \,\bowtie_{\,\text{Essn} \,=\, \text{Ssn}} \textsc{smith})
+	\end{align*}
+	
+	\item We selecteren alle werknemers met alle projecten waar ze aan werken uit \textsc{works\_on}.
+	\vspace{-2mm}
+	\[ \textsc{ssn\_pnos} \leftarrow \pi_{\,\text{Essn, Pno}} \;(\textsc{works\_on}) \]
+	
+	\item We passen de \textsc{division}-operatie toe op de 2 relaties die we net gemaakt hebben.
+	\vspace{-2mm}
+	\begin{align*}
+	& \textsc{ssns}(\textit{Ssn}) \leftarrow \textsc{ssn\_pnos} \div \textsc{smith\_pnos}\\
+	& \textsc{result} \leftarrow \pi_{\,\text{Fname, Lname}} \;(\textsc{ssns} * \textsc{employee})
+	\end{align*}
+\end{enumerate}
+Over het algemeen wordt de \textsc{division}-operatie op twee relaties uitgevoerd: $R(Z) \div S(X)$, waarbij de attributen van $R$ een subset zijn van de attributen van $S$, dus X $\subseteq$ Z. Als $Y$ de verzameling attributen van $R$ is die geen attributen zijn van $S$, dan geldt $Y = Z-X$ en $Z = X \cup Y$.
+
+Het resultaat van \textsc{division} is een relatie $T(Y)$ die het tupel $t$ bevat als de tupels $t_R$ in $R$ voorkomen met $t_R[Y] = t$ en met $t_R[X] = t_S$ voor elke tupel $t_S$ in $S$.
+
+Simpeler uitgelegd: voor elke tupel $t$ die in het resultaat van \textsc{division} voorkomt, moet elke waarde in $t$ uit $R$ in combinatie voorkomen met \textit{elke} tupel in $S$.
+
+~
+
+\noindent Een voorbeeld om het duidelijk te maken:
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\multicolumn{2}{|c|}{\textbf{PROJECT\_AF}} \\
+\hline
+\textit{Student} & \textit{Opdracht} \\ \hline
+Fred & Database1 \\ \hline
+Fred & Database2 \\ \hline
+Fred & Compiler1 \\ \hline
+Eugene & Database1 \\ \hline
+Eugene & Compiler1 \\ \hline
+Sarah & Database1 \\ \hline
+Sarah & Database2 \\
+\hline
+\end{tabular}
+$\;\;\div\;\;$
+\begin{tabular}{|c|}
+\hline
+\multicolumn{1}{|c|}{\textbf{PROJECT}} \\
+\hline
+\textit{Opdracht} \\ \hline
+Database1 \\ \hline
+Database2 \\
+\hline
+\end{tabular}
+$\;\;\longrightarrow\;\;$
+\begin{tabular}{|c|}
+\hline
+\multicolumn{1}{|c|}{\textbf{RESULTAAT}} \\
+\hline
+\textit{Student} \\ \hline
+Fred \\ \hline
+Sarah \\
+\hline
+\end{tabular}
+\end{center}
+Als we $\textsc{project\_af} \div \textsc{project}$ uitvoeren, behoren enkel de tupels tot het resultaat die voldoen aan de volgende voorwaarde: de juiste tupels komen voor in \textsc{project\_af} in combinatie met elke tupel in \textsc{project}. Dus in het resultaat zullen enkel studenten opgenomen worden die voorkomen met zowel opdracht \textit{``Database1''} als \textit{``Database2''}. Dit zijn Fred en Sarah.
+
+Eugene wordt niet opgenomen omdat hij enkel voorkomt met \textit{Database1} en niet \textit{Database2}.
+
+~
+
+\noindent De \textsc{division}-operatie kan geschreven worden als een combinatie van de operaties $\{\pi,\times,-\}$.
+\vspace{-2mm}
+\begin{align*}
+& T_1 \leftarrow \pi_Y (R) \\
+& T_2 \leftarrow \pi_Y \big((S \times T_1) - R\big) \\
+& T \leftarrow T_1 - T_2
+\end{align*}
+De \textsc{division}-operatie is ingevoerd om met queries te kunnen werken waarin een \textbf{universele kwantor} $\forall$ voorkomt.
+
+
+\subsection{Notation for Query Trees}
+Hier beschrijven we de \textbf{interne voorstelling} van queries. Deze voorstelling noemen we een \textbf{query tree}. Deze bevat de relationele algebra operaties die uitgevoerd worden en wordt soms als datastructuur gebruikt om intern queries voor te stellen in  een RDBMS.
+
+~
+
+\noindent Een query tree bevat de input-relaties als \textit{bladeren} van de boom en bevat de operaties als \textit{interne knopen}. Een query tree begint onderaan uit te voeren en voert telkens een knoop uit wanneer zijn kind-knopen uitgevoerd zijn, de uitvoer stopt als de wortel uitgevoerd is. Telkens een knoop uitgevoerd wordt, wordt deze vervangen door zijn resultaat.
+
+Bijvoorbeeld: \textit{``Voor elk project met als locatie `Stafford', geef de projectnumers, het departementsnummer dat het project controleert en de departemensmanager zijn achternaam, adres en geboortedatum.''} Dit stellen we voor met de volgende query:
+\vspace{-2mm}
+\begin{align*}
+& \textsc{raw\_result} \leftarrow \big( \sigma_{\,\text{Plocation} \,=\, \text{`Stafford'}}(\textsc{project}) \big) \,\bowtie_{\,\text{Dnum} \,=\, \text{Dnumber}} (\textsc{department}) \\
+& \textsc{result} \leftarrow \pi_{\,\text{Pnumber, Dnum, Lname, Address, Bdate}} \; \big( \textsc{raw\_result} \,\bowtie_{\,\text{Mgr\_ssn} \,=\, \text{Ssn}} (\textsc{employee}) \big)
+\end{align*}
+
+\noindent De query tree die hiermee overeenkomt is figuur 6.9 op pagina \textbf{161}. De bladeren $P$, $D$ en $E$ stellen de 3 relaties \textsc{project}, \textsc{department} en \textsc{employee} voor. De relationele algebra operaties worden voorgesteld in de interne knopen. Knoop 1 moet uitgevoerd worden \textit{v\'o\'or} knoop 2 omdat deze resultaten van knoop 1 gebruikt.
+
+
+
+\section{Additional Relational Operations}
+Sommige queries die vaak nodig zijn in commerci\"ele applicaties, kunnen niet voorgesteld worden met de originele relationele algebra operaties. In deze sectie zullen we bijkomende operaties defini\"eren.
+
+
+\subsection{Generalized Projection}
+De \textbf{generalized projection} operatie breidt de `gewone' projectie-operatie uit door toe te laten dat er functies van attributen gebruikt worden. De generieke vorm is:
+\vspace{-2mm}
+\[ \pi_{F_1,F_2,\dots,F_n}(R) \]
+Hier zijn $F_1,F_2,\dots,F_n$ functies op de attributen uit de relatie \textit{R}.
+
+\newpage
+\noindent Bijvoorbeeld, we hebben de relatie \textsc{employee}(\textit{Ssn}, \textit{Salary}, \textit{Deduction}, \textit{Years\_service}) en we willen de volgende informatie:
+\vspace{-2mm}
+\begin{align*}
+\text{Net Salary} &= \text{Salary} - \text{Deduction} \\
+\text{Bonus} &= 2000 \times \text{Years\_service} \\
+\text{Tax} &= 0.25 \times \text{Salary}
+\end{align*}
+Dit kunnen we voorstellen met de volgende gegeneraliseerde projectie:
+\vspace{-2mm}
+\[ \textsc{report} \leftarrow \rho_{\,(\text{Ssn, Net\_salary, Bonus, Tax})} \;\big( \pi_{\,\text{Ssn, Salary} \,-\, \text{Deduction, } 2000 \,\times\, \text{Years\_service, } 0.25 \,\times\, \text{Salary}} \;(\textsc{employee})\big) \]
+
+
+\subsection{Aggregate Functions and Grouping}
+Ook queries die nood hebben aan aggregaatfuncties kunnen niet voorgesteld worden met gewone relationele algebra operaties, bijvoorbeeld het opvragen van het gemiddelde loon van de werknemers.
+
+Het symbool voor de aggregaatoperatie is $\mathfrak{F}$ (een rare F). Een generieke aggregaatoperatie heeft de volgende vorm.
+\vspace{-2mm}
+\[ _\text{{\textless}groeperingsattributen{\textgreater}} \,\mathfrak{F}_{\, \text{{\textless}functielijst{\textgreater}}}(R) \]
+De groeperingsattributen is een lijst attributen uit de relatie $R$, de functielijst bestaat uit paren ({\textless}functie{\textgreater}{\textless}attribuut{\textgreater}). Hierin stelt {\textless}functie{\textgreater} een attribuut uit $R$ voor en {\textless}attribuut{\textgreater} is 1 van de volgende functies: \textsc{sum}, \textsc{average}, \textsc{maximum}, \textsc{minimum}, \textsc{count}.
+
+Om bijvoorbeeld elk departementsnummer, het aantal werknemers in dat departement en hun gemiddeld loon op te vragen, kunnen we de volgende query gebruiken.
+\vspace{-2mm}
+\[ \rho_{\,R( \text{Dno, No\_of\_employees, Average\_sal} )} \;\big( ~_{\text{Dno}} \,\mathfrak{F}_{\, \text{\textsc{count} Ssn, \textsc{average} Salary}} \,(\textsc{employee}) \;\big) \]
+In het bovenstaande voorbeeld hebben we direct de resultaten van de aggregaatfuncties \textsc{count} en \textsc{average} hernoemd, als we dit niet doen krijgen ze de naam ``{\textless}functie{\textgreater}\underline{\hspace{4mm}}{\textless}attribuut{\textgreater}''. Als we geen groeperingsattribuut specifi\"eren, worden de functies toegepast op \textit{alle tupels} in de relatie. Het resultaat hiervan zal altijd bestaan uit 1 tupel.
+
+~
+
+\noindent De volgende tabel is het resultaat van de voorbeeldquery.
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textit{Dno} & \textit{No\_of\_employees} & \textit{Average\_sal} \\ \hline
+5 & 4 & 33250\\ \hline
+4 & 3 & 31000\\ \hline
+1 & 1 & 55000\\
+\hline
+\end{tabular}
+\end{center}
+\vspace{4mm}
+De volgende tabel wordt bekomen als we geen \textsc{rename}-operatie uitvoeren op het resultaat
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\textit{Dno} & \textit{Count\_Ssn} & \textit{Average\_Salary} \\ \hline
+5 & 4 & 33250\\ \hline
+4 & 3 & 31000\\ \hline
+1 & 1 & 55000\\
+\hline
+\end{tabular}
+\end{center}
+\vspace{4mm}
+De onderstaande tabel krijgen we als we geen groeperingsattribuut meegeven.
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textit{No\_of\_employees} & \textit{Average\_sal} \\ \hline
+8 & 35125\\
+\hline
+\end{tabular}
+\end{center}
+
+
+\subsection{Recursive Closure Operations}
+Een ander soort van operaties die niet voorgesteld kunnen worden met gewone relationele algebra zijn de \textbf{recursive closure}-operaties (\textit{recursieve sluiting}). Deze operaties worden toegepast op een recursieve relatie tussen tupels van hetzelfde type.
+
+Bijvoorbeeld: we willen de baas van een werknemer op elk niveau opvragen, dus de baas $e'$ van werknemer $e$, de baas $e''$ van werknemer $e'$ enzovoort. Met gewone relationele algebra is het mogelijk om de bazen van elkaar op te vragen tot op een specifiek niveau door de tabellen een aantal keer te joinen. Het is echter niet mogelijk om \textit{alle} bazen op te vragen. Dit type operaties wordt hier niet beschreven.
+
+
+\subsection{OUTER JOIN Operations}
+Hier zullen we uitbreidingen van de \textsc{join}-operatie bespreken die nodig zijn om bepaalde queries voor te kunnen stellen. In de voorgaande beschrijvingen van \textsc{join}-operaties moest er telkens voldaan zijn aan een bepaalde join-conditie. Dit noemen we \textbf{inner joins}, bij deze joins vallen altijd tupels weg uit het resultaat, namelijk deze die niet voldoen aan de join-conditie.
+
+~
+
+\noindent Bij \textbf{outer joins} worden alle tupels in beide relaties behouden. Deze operaties zijn soms nodig als toch blijkt dat de hele tabel nodig is, ook als niet alle tupels overeenkomen.
+
+Bijvoorbeeld: we willen een lijst opvragen van \textit{alle} werknemers en per werknemer de naam van het departement dat die leidt. Als een werknemer geen departement leidt, wordt de \textsc{department}-tupel voor die werknemer \texttt{NULL} in het resultaat. Dit is mogelijk als we een \textsc{left outer join}-operatie gebruiken.
+\vspace{-2mm}
+\begin{align*}
+& \textsc{temp} \leftarrow \big( \textsc{employee} \leftouterjoin_{\;\text{Ssn} \,=\, \text{Mgr\_ssn}} (\textsc{department}) \big) \\
+& \textsc{result} \leftarrow \pi_{\,\text{Fname, Minit, Lname, Dname}} \;(\textsc{temp})
+\end{align*}
+Deze \textsc{left outer join}-operatie behoudt elke tupel van de linkse relatie in $R \,\leftouterjoin\, S$. Als er in $S$ geen tupel voorkomt die overeenkomt met een tupel uit $R$, wordt deze in het resultaat aangevuld met \texttt{NULL}-waarden.
+
+Gelijkaardig hebben we ook de \textsc{right outer join}-operatie ($\rightouterjoin$) die elke tupel in de rechtse relatie (dus $S$) behoudt. Er bestaat ook een \textsc{full outer join}-operatie ($\fullouterjoin$) die zowel alle tupels in de eerste als in de tweede relatie behoudt.
+
+
+\subsection{The OUTER UNION Operation}
+De \textsc{outer union}-operatie ($\cup^+$) is ontwikkeld om de unie te nemen van tupels uit 2 relaties die overeenkomstige attributen hebben maar niet \textit{union-compatible} zijn.
+
+Deze operatie neemt de \textsc{union} van tupels in 2 relaties $R(X,Y)$ en $S(X,Z)$ die \textbf{gedeeltelijk compatibel} zijn. Dit betekent dat slechts enkele attributen (bijvoorbeeld $X$) union-compatible zijn. De union-compatible attributen komen slechts eenmaal voor in het resultaat. De  attributen die \textit{niet} union-compatible zijn, worden ook behouden in het resultaat $T(X,Y,Z)$.
+
+De \textsc{outer union}-operatie is dus hetzelfde als de \textsc{full outer join}-operatie op de union-compatible attributen.
+
+~
+
+\noindent Twee tupels $t_1$ in $R$ en $t_2$ in $S$ \textbf{matchen} als $t_1[X]=t_2[X]$. Deze zullen worden gecombineerd tot een enkele tupel in $t$. Tupels in $R$ en $S$ die geen overeenkomstige tupel hebben in de andere relatie, worden aangevuld met \texttt{NULL}-waarden.
+
+\newpage
+\noindent Voorbeeld: we hebben 2 relaties met redelijk overeenkomstige schema's:
+\vspace{-2mm}
+\begin{align*}
+& \textsc{student} \,(\text{Name, Ssn, Department, Advisor}) \\
+& \textsc{instructor} \,(\text{Name, Ssn, Department, Rank})
+\end{align*}
+Als we de \textsc{outer union}-operatie toepassen op deze 2 relaties krijgen we als resultaat:
+\vspace{-2mm}
+\[ \textsc{student\_or\_instructor} \,(\text{Name, Ssn, Department, Advisor, Rank}) \]
+Alle tupels uit beide relaties zullen voorkomen in het resultaat, tupels met dezelfde (\textit{Name}, \textit{Ssn}, \textit{Department})-combinatie zullen slechts 1 keer voorkomen. Tupels uit de \textsc{student}-relatie zullen onder het attribuut \textit{``Rank''} \texttt{NULL}-waarden in het resultaat hebben. Bij tupels uit \textsc{instructor} zal dit het geval zijn onder \textit{``Advisor''}. Merk op dat dezelfde persoon nog altijd tweemaal kan voorkomen in het resultaat als hij ingeschreven is als student \'en als instructor.
+
+~
+
+\noindent Er bestaat ook een \textsc{inner union}-operatie: $Q = R \,\cup^- S$ met $\textit{Attr}(Q) = \textit{Attr}(R) \cap \textit{Attr}(S)$.
+
+Analoog is \textsc{outer union} gedefinieerd als: $Q = R \,\cup^+ S$ met $\textit{Attr}(Q) = \textit{Attr}(R) \cup \textit{Attr}(S)$.
+
+
+\setcounter{section}{5}
+\section{The Tuple Relational Calculus}
+In deze en de volgende sectie introduceren we een andere, formele querytaal voor het relationele model: de \textbf{relational calculus}. Er zijn 2 versies: \textbf{tuple relational calculus} (6.6) en \textbf{domain relational calculus} (6.7). In beide gevallen gaat het om \textbf{declaratieve expressies}, we zeggen dus niet \textit{hoe} we aan het resultaat geraken maar \textit{wat} we willen. Dit verschilt met relationele algebra waarin een opeenvolging van queries wordt gegeven in een bepaalde volgorde (dus \textit{procedural}).
+
+Men heeft aangetoond dat men in de relationele algebra dezelfde queries kan uitvoeren als in de relationele calculus en vice versa. We zeggen dus dat hun \textbf{expressive power} identiek is.
+
+We noemen een bepaalde querytaal $L$ \textbf{relationally complete} als we in $L$ elke query kunnen beschrijven die in relationele calculus te schrijven valt.
+
+
+\subsection{Tuple Variables and Range Relations}
+\textbf{Tupelcalculus} is gebaseerd op het specifieren van \textbf{tupelvariabelen}, een tupelvariabele kan als waarde elke individuele tupel aannemen uit een relatie. Een simpele query in tupelcalculus heeft de volgende vorm:
+\vspace{-2mm}
+\[ \big\{ t \bigm| \textsc{cond}(t) \big\} \]
+Hierbij is $t$ de tupelvariabele en $\textsc{cond}(t)$ is een Booleaanse expressie waarin $t$ voorkomt. Het resultaat van zo'n query is de verzameling van alle tupels $t$ waarvoor $\textsc{cond}(t)$ waar is.
+
+Bijvoorbeeld: we vragen alle werknemers op die een loon hebben van meer dan \$50000:
+\vspace{-2mm}
+\[ \big\{ t \bigm| \textsc{employee}(t) \textbf{ AND } t.\text{Salary} > 50000 \big\} \]
+De conditie $\textsc{employee}(t)$ zegt dat $t$ moet behoren tot de werknemers. Elke werknemer waarvoor $(t.\text{Salary} > 50000)$ naar \textsc{true} evalueert, zal worden opgenomen in het resultaat.
+
+De bovenstaande query geeft alle attribuutwaarden terug van werknemers die voldoen aan de conditie. We kunnen ook maar enkele attributen selecteren:
+\vspace{-2mm}
+\[ \big\{ t.\text{Fname, } t.\text{Lname} \bigm| \textsc{employee}(t) \textbf{ AND } t.\text{Salary} > 50000 \big\} \]
+Voor een query in tupelcalculus hebben we dus de volgende informatie nodig:
+\begin{itemize}
+\item Voor elke tupel $t$ moeten we een \textbf{range relation} $R$ specifi\"eren, dit is een conditie van de vorm $R(t)$. Als we dit niet doen, zal $t$ waarden aannemen van tupels uit het hele universum.\\
+In het voorbeeld hierboven: $\textsc{employee}(t)$.
+\item Een conditie om enkel bepaalde combinaties van tupels te selecteren.\\
+In het voorbeeld hierboven: $t.\text{Salary} > 50000$.
+\item De set van attributen die we willen opvragen.\\
+In het voorbeeld hierboven: $t.\text{Fname, } t.\text{Lname}$.
+\end{itemize}
+
+
+\subsection{Expressions and Formulas in Tuple Relational Calculus}
+Een generieke expressie in tupelcalculus heeft de volgende vorm:
+\vspace{-2mm}
+\[ \big\{ t_1.A_j \text{, } t_2.A_k \text{, \dots, } t_n.A_m \bigm| \textsc{cond} ( t_1 \text{, } t_2 \text{, \dots, } t_n \text{, } t_{n+1} \text{, } t_{n+2} \text{, \dots, } t_{n+m} ) \big\} \]
+Hierbij zijn $t_1 \text{, } t_2 \text{, \dots, } t_n \text{, } t_{n+1} \text{, \dots, } t_{n+m}$ tupelvariabelen en elke $A_i$ is een attribuut van de relatie $t_i$. \textsc{cond} is een conditie opgebouwd uit \textbf{calculus atoms} die 1 van de volgende vormen hebben:
+\begin{itemize}
+\item $R(t_i)$ met $R$ de naam van een relatie. Dit atoom duidt de \textit{range} van $t_i$ aan als de relatie met naam $R$.
+\item $(t_i.A \textbf{ op } t_j.B)$ met \textbf{op} een vergelijkingsoperator uit de set $\{=  \text{, } < \text{, } > \text{, } \leqslant \text{, } \geqslant \text{, } \neq \text{, \dots} \}$.
+\item $(t_i.A \textbf{ op } c)$ met $c$ een constante waarde.
+\end{itemize}
+Een \textbf{formule} is opgebouwd uit meerdere atomen, gecombineerd met de logische operatoren \textbf{AND}, \textbf{OR} en \textbf{NOT}.
+
+
+\subsection{The Existential and Universal Quantifiers}
+We voegen nu ook \textbf{kwantoren} toe: de \textbf{universele kwantor} ($\forall$) en de \textbf{existenti\"ele kwantor} ($\exists$). Dit zou gekend moeten zijn, indien niet kan je best sectie 6.6.3 op pagina \textbf{173-174} lezen.
+
+
+\subsection{Sample Queries in Tuple Relational Calculus}
+We geven 1 voorbeeldquery in tupelcalculus waarin een kwantor gebruikt wordt. Voor andere voorbeelden bekijk je best sectie 6.6.4 op pagina \textbf{174-175}.
+
+We willen de naam en het adres van alle werknemers die aan \textit{`Research'} werken.
+\vspace{-2mm}
+\begin{align*}
+\Big\{ t.\text{Fname, } &t.\text{Lname, } t.\text{Address} \Bigm| \textsc{employee}(t) \textbf{ AND } \\
+&(\exists d) \big(\, \textsc{department}(d) \textbf{ AND } d.\text{Dname} = \text{`Research'} \textbf{ AND } d.\text{Dnumber} = t.\text{Dno} \,\big) \Big\}
+\end{align*}
+
+
+\subsection{Notation for Query Graphs}
+In deze sectie stellen we een grafische manier voor om queries in relationele calculus voor te stellen. Deze queries gebruiken geen kwantoren: \textbf{select-project-join queries}. De grafische weergave van deze queries noemen we een \textbf{query graph}.
+
+Relaties worden voorgesteld met \textbf{relation nodes} die aangeduid worden met enkele cirkels. Constanten noemen we \textbf{constant nodes} en hebben een dubbele cirkel. Selectie- en join-condities worden in de grafe voorgesteld als verbindingen (\textbf{edges}) en de attributen die we opvragen zijn aangeduid in vierkante haakjes boven elke relatie.
+
+Zo'n query graph duidt niet de volgorde aan waarin deze uitgevoerd moeten worden en is dus een neutralere vorm dan de query tree om een query grafisch weer te geven.
+
+Voor query-optimalisatie wordt meestal een query tree gebruikt omdat het handiger is om te weten in welke volgorde dingen uitgevoerd moeten worden.
+
+\textit{Een voorbeeld van een query graph vind je op pagina \textbf{175}}.
+
+
+\subsection{Transforming the Universal and Existential Quantifiers}
+Hier worden de logische regels beschreven om existenti\"ele en universele kwantoren te transformeren naar elkaar door gebruik te maken van \textbf{AND, OR} en \textbf{NOT}. Als je deze regels niet meer kent, lees dan even sectie 6.6.6 op pagina \textbf{176}.
+
+
+\subsection{Using the Universal Quantifiers in Queries}
+Als we universele kwantoren willen gebruiken in een uitdrukking, moeten we op enkele dingen letten.
+
+Neem als voorbeeld dat we alle werknemers uit departement 5 willen selecteren, het is logisch dat we hierbij een universele kwantor kunnen gebruiken. Om een universele kwantor naar \textsc{true} te laten evalueren, moet de formule waar zijn \textit{voor elk element uit het universum}. Maar in onze query willen we enkel de werknemers uit departement 5.
+
+We kunnen dit oplossen door alle tupels waarin we niet ge\"interesseerd zijn, automatisch naar \textsc{true} te laten evalueren. Dit doen we door de conditie de vorm $\big(\textbf{NOT } R(x) \textbf{ OR } \text{conditie}(x) \big)$ te geven als we enkel ge\"interesseerd zijn in tupels uit de relatie $R$. Elke tupel die niet in $R$ voorkomt zal dus naar \textsc{true} evalueren.
+
+In principe maken we hier een implicatie $(\forall x)\big( R(x) \Rightarrow \textit{conditie}(x) \big)$ die we omvormen tot een disjunctie. In het voorbeeld wordt dit $(\forall x)\big( \textsc{department}(x) \Rightarrow x.\text{Dnum}=5 \big)$. Deze formule zegt: \textit{``als $x$ een departement is, dan moet het nummer 5 zijn''}. Als we deze conditie in tupelcalculus noteren, krijgen we $(\forall x)\big( \textbf{NOT } \textsc{department}(x) \textbf{ OR } x.\text{Dnum}=5 \big)$.
+
+
+\subsection{Safe Expressions}
+We noemen uitdrukkingen die gegarandeerd een eindig aantal tupels teruggeven \textbf{safe}, in het andere geval \textbf{unsafe}. De volgende query is \textit{unsafe} omdat er oneindig veel tupels in het universum bestaan die geen werknemer zijn.
+\vspace{-2mm}
+\[ \big\{ t \bigm| \textbf{NOT } \textsc{employee}(t) \big\} \]
+We kunnen het concept van een safe uitdrukking preciezer defini\"eren aan de hand van het concept van het \textit{domein} van een uitdrukking in tupelcalculus. Het domein van het voorgaande voorbeeld is de set van alle attribuutwaarden die \textit{voorkomen} in een tupel van de \textsc{employee}-relatie.
+
+Een uitdrukking noemen we veilig als alle waarden in het resultaat uit dit domein komen. Ons voorbeeld is dus niet veilig omdat er ook tupels in het restultaat voorkomen die \textit{niet} voorkomen in \textsc{employee} (eigenlijk komt geen enkele tupel in het resultaat uit \textsc{employee}).
+
+
+
+\newpage
+\section{The Domain Relational Calculus}
+Naast \textit{tuple relational calculus} hebben we ook \textbf{domain relational calulus} of \textbf{domeincalculus}.
+
+Het verschil tussen domeincalculus en tupel calculus ligt in het type van variabelen die we gebruiken in de formules. In de domeincalculus laten we de variabelen waarden aannemen uit de domeinen van attributen in plaats van over tupels.
+
+De generieke vorm van een domain calculus query is de volgende.
+\vspace{-2mm}
+\[ \big\{ x_1,\, x_2,\, \dots,\, x_n \bigm| \textsc{cond}(x_1,\, x_2,\, \dots,\, x_n,\, x_{n+1},\, x_{n+2},\, \dots,\, x_{n+m}) \big\} \]
+Hierbij zijn $(x_1,\, x_2,\, \dots,\, x_n,\, x_{n+1},\, x_{n+2},\, \dots,\, x_{n+m})$ de domeinvariabelen die \textit{rangen} over domeinen van attributen, \textsc{cond} is een conditie. Een formule is ook hier opgebouwd uit atomen (die waar of vals kunnen zijn), hier hebben ze echter een beetje een andere vorm dan in tupel calculus:
+\begin{itemize}
+\item $R(x_1,\, x_2,\, \dots,\, x_j)$ met $R$ de naam van een relatie van graad $j$. Om alles wat leesbaarder te maken laten we kommas weg: $R(x_1 x_2 x_3)$
+\item $(x_i \textbf{ op } x_j)$ met \textbf{op} een vergelijkingsoperator uit de set $\{=  \text{, } < \text{, } > \text{, } \leqslant \text{, } \geqslant \text{, } \neq \text{, \dots} \}$.
+\item $(x_i \textbf{ op } c)$ met $c$ een constante.
+\end{itemize} 
+Om bijvoorbeeld de geboortedatum en het adres van de werknemer John B. Smith op te vragen, gebruiken we de volgende uitdrukking
+\vspace{-2mm}
+\begin{align*}
+\Big\{ u,v \Bigm| \; &(\exists q)(\exists r)(\exists s)(\exists t)(\exists w)(\exists x)(\exists y)(\exists z) \\
+&\big( \textsc{employee}(qrstuvwxyz) \textbf{ AND } q=\text{`John'} \textbf{ AND } r=\text{`B'} \textbf{ AND } s=\text{`Smith'} \big) \Big\}
+\end{align*}
+Hiervoor hebben we dus 10 variabelen nodig, 1 om over elk domein van attributen te gaan. Veel van de gespecifieerde variabelen worden echter niet gebruikt. Bij domeincalculus is het dus nodig om de volgorde te kennen waarin attributen opgeslagen zijn, vooraleer we ze kunnen opvragen.
+
+Een andere (iets kortere) manier om de voorgaande query neer te schrijven, is het gebruiken van constanten in de uitdrukking.
+\vspace{-2mm}
+\[ \big\{ u,v \bigm| \textsc{employee}(\text{`John'},\, \text{`B'},\, \text{`Smith'},\, t,\, u,\, v,\, w,\, x,\, y,\, z) \big\} \]
+Om de naam en het adres van alle werknemers op te vragen die in het `Research'-departement werken, gebruiken we de volgende uitdrukking.
+\begin{align*}
+\Big\{ q,s,v \Bigm| \;(\exists z)(\exists l)(\exists m) \big( &\textsc{employee}(qrstuvwxyz) \textbf{ AND } \\
+&\textsc{department}(lmno) \textbf{ AND } l=\text{`Research'} \textbf{ AND } m=z \big) \Big\}
+\end{align*}

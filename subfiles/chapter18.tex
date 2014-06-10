@@ -1,0 +1,360 @@
+\chapter{Introduction to Query Processing and Query Optimization Techniques}
+In dit hoofdstuk worden de technieken uitgelegd die een DBMS gebruikt om een hoogniveau query te verwerken, optimaliseren en uit te voeren. Een DBMS heeft heel wat onderdelen die met queries te maken hebben.
+
+De \textbf{scanner} identificeert de \textit{query tokens}, in SQL zijn dit de keywords, attribuut- en relatienamen. De \textbf{parser} controleert of de query aan de regels van de query syntax voldoet. De \textbf{validator} controleert of alle attribuut- en relatienamen geldig zijn. Een \textbf{query tree} of \textbf{query graph} is de inwendige structuur waarin de query wordt bijgehouden.
+
+De \textbf{execution strategy} (of \textbf{query plan}) wordt door het DBMS gebruikt om de resultaten van de query uit de database te halen. Er zijn meestal meerdere strategie\"en, het proces om een geschikte uitvoeringsstrategie te zoeken wordt \textbf{query optimization} genoemd. De \textbf{query optimizer} moet een goede uitvoeringsstrategie kiezen.
+
+De \textbf{code generator} genereert de code om de uitvoeringsstrategie uit te voeren. De \textbf{runtime database processor} moet de de query code uitvoeren en hiermee de resultaten opvragen.
+
+\textit{Op figuur 18.1 op pagina \textbf{660} staan de stappen van het verwerken van een query.}
+
+
+
+\section{Translating SQL Queries into Relational Algebra}
+Een SQL query wordt eerst omgezet naar een equivalente \textit{extended relational algebra expression} en wordt dan geoptimaliseerd (omdat in SQL de volgorde van bewerkingen minder vastligt).
+
+Meestal wordt een SQL query eerst onderverdeeld in query blocks. Een \textbf{query block} bestaat uit een enkele \textsc{select}--\textsc{from}--\textsc{where}-uitdrukking. \textsc{Group by} en \textsc{having} zijn ook onderdeel van de query block als deze voorkomen in de uitdrukking. Geneste SQL queries worden beschouwd als aparte query blocks. 
+
+
+
+\section{Algorithms for External Sorting}
+Sorteeralgoritmen worden vaak gebruikt bij het verwerken van queries. Ze moeten bijvoorbeeld gebruikt worden bij een \textsc{order by}-clausule van een SQL query. Andere situaties waarbij sorteeralgoritmen gebruikt worden zijn \textsc{join}, \textsc{union}, \textsc{intersection} en \textsc{project} (om duplicaten te verwijderen als \textsc{distinct} geslecteerd wordt).
+
+~
+
+\noindent \textbf{External sorting:} sorteeralgoritmes die gebruikt worden bij het sorteren van grote bestanden die bestaan uit records (op een harde schijf). Voor deze algoritmes wordt de \textbf{sort-merge strategy} gebruikt: eerst worden kleine subfiles gesorteerd, later worden deze samengevoegd (\textit{merge}).
+
+\noindent Er is een \textbf{buffer space} nodig om het sorteren en het mergen uit te voeren. De buffer space in het main memory is onderdeel van de DBMS-cache. De buffer space is onderverdeeld in individuele buffers die elk even groot zijn en elk juist 1 disk block kunnen bevatten.
+
+In de \textit{sorteerfase} worden \textbf{runs} (kleine delen van het bestand die in de buffer space passen) in de buffer geladen, gesorteerd met een intern sorteeralgoritme en dan weer weggeschreven naar de schijf als tijdelijk bestand. Dit wordt herhaald tot het volledige bestand is overlopen.
+
+In de \textit{mergefase} worden de runs samengevoegd in 1 of meer \textbf{merge passes} tot er maar 1 gesorteerd bestand overblijft. Elke merge pass kan bestaan uit verschillende \textbf{merge steps}. De \textbf{degree of merging} wordt bepaald door het aantal runs dat samengevoegd wordt bij elke merge step. Tijdens elke merge step is er een buffer nodig voor elke run (deze bevat dan een disk block van de run). Er is ook nog een extra buffer nodig met het resultaat van de merge step.
+
+~
+
+\noindent Zij $b$ het aantal blokken en $n_B$ het aantal vrije buffers, dan heeft het sort-merge algoritme exact $n_R = \lceil b \,/\, n_B \rceil$ runs nodig.
+
+In de mergefase is de degree of merging $d_M$ gelijk aan het aantal deelbestanden (runs) die ineens samengevoegd kunnen worden, dus $d_M = n_B-1$. Het aantal passes is gelijk aan $\lceil \log_{d_M} n_R \rceil$. De mergefase heeft dus een complexiteit van $2 \cdot b \cdot \log_{d_M}(n_R)$.
+
+In de sorteerfase wordt elk blok 1 keer ingelezen en 1 keer weggeschreven: $2 \cdot b$.
+
+Dit geeft een \textbf{totale complexiteit} van $2 \cdot b + 2 \cdot b \cdot \log_{d_M}(n_R)$.
+
+~
+
+\noindent \textit{In figuur 18.2 op pagina \textbf{664} staat de pseudocode voor het sort-merge algoritme.}
+
+
+
+\section{Algorithms for SELECT and JOIN Operations}
+\subsection{Implementing the SELECT Operation}
+\textbf{Search methods for simple selection}\\
+Deze zoekmethodes scannen alle records om records te vinden die aan het selectiecriterium voldoen.
+\begin{enumerate}
+	\item[S1] \textbf{Lineair search (brute force).} Doorloop elke record in de file op zoek naar matches.
+	
+	\item[S2] \textbf{Binary search.} Enkel mogelijk als de conditie een \textit{equality comparison} (``='') gebruikt op een sleutelattribuut waarop het bestand geordend is.
+	
+	\item[S3] \textbf{Using a primary index or a hash key.} Enkel mogelijk als de conditie een equality comparison gebruikt op een sleutelattribuut dat een primary index of een hashfunctie heeft. Dit zoekalgoritme is effectief voor \textit{point queries}. Er wordt altijd maar 1 record opgehaald.
+	
+	\item[S4] \textbf{Using a primary index to retrieve multiple records.} Dit wordt gebruikt als de conditie een ongelijkheid uit $\{<,\leqslant,>,\geqslant\}$ gebruikt en als er gezocht wordt op een sleutelattribuut met een primary index.
+	
+	\item[S5] \textbf{Using a clustering index to retrieve multiple records.} Enkel mogelijk als de conditie een equality comparison gebruikt op een niet-sleutelattribuut dat de ordening bepaalt.
+	
+	\item[S6] \textbf{Using a secondary (B$^+$-tree) index on an equality comparison.} Dit geeft 1 record terug als het indexing field een sleutelattribuut is (met ``=''), bij niet-sleutelattributen geeft het meerdere records terug. De conditie kan bestaan uit $\{=,<,\leqslant,>,\geqslant\}$.
+\end{enumerate}
+\textbf{Index searches:} methodes die een index gebruiken, dus S3, S4, S5 en S6.\\
+\textbf{Range queries:} queries waarbij de conditie een vergelijking uit $\{<,\leqslant,>,\geqslant\}$ gebruikt.
+
+~
+
+\noindent \textbf{Search methods for complex selection}\\
+Deze zoekalgoritmen zijn bedoeld voor queries met een \textbf{conjunctieve conditie}. Een conjunctieve conditie bestaat uit simpele deelcondities die zijn samengevoegd met \textbf{AND}.
+\begin{itemize}
+	\item[S7] \textbf{Conjunctive selection using an individual index.} Indien er voor 1 van de simpele deelcondities een van de methodes S2 -- S6 bruikbaar is, selecteer dan eerst volgens die deelconditie. Test hierna voor elk gevonden record de andere deelconditie(s).
+	
+	\item[S8] \textbf{Conjunctive selection using a composite index.} Dit is enkel mogelijk als er voor 2 of meer attributen een ``=''-deelconditie gebruikt wordt en als er een samengestelde index op die attributen bestaat.
+
+	\item[S9] \textbf{Conjunctive selection by intersection of record pointers.} Mogelijk met secundaire indexen die recordpointers bevatten (geen blokpointers). Voor elke ``=''-conditie op een secundair ge\"indexeerd attribuut wordt de verzameling van recordpointers opgehaald. Uit de doorsnede van al die verzamelingen worden enkele records opgehaald. De andere condities worden dan getest op deze records om zo de records weg te filteren die niet aan de query voldoen.\\	
+Deze methode werkt enkel voor attributen die geen sleutelattribuut zijn. Het grote voordeel is dat een groot deel van het selectiewerk enkel op indices moet gebeuren.
+\end{itemize}
+\textbf{Selectivy $sl$ of a condition:} de verhouding van het aantal records dat aan de conditie voldoen tegenover het totaal aantal records in het bestand. Schattingen van deze waarden worden soms bijgehouden in de DBMS en gebruikt door de optimizer.
+
+Als er bij een selectie met een conjunctieve conditie (S7, S8 of S9) meerdere toegangspaden beschikbaar zijn, moet de conditie met de laagste selectiviteit $sl$ als eerste gekozen worden. Men kan ook schattingen van $sl$ uit de catalogus gebruiken.
+
+~
+
+\noindent Een selectie met een disjunctieve conditie is moeilijker te optimaliseren, elke deelconditie moet volledig getest worden. Als een deelconditie geen toegangspad heeft, moet er lineair gezocht worden. Het gebruiken van indexen voor de andere indexen is dan niet meer zinvol.
+
+
+\subsection{Implementing the JOIN Operation}
+De dure \textsc{join}-operatie kan op verschillende manieren ge\"implementeerd worden. De methodes hieronder zijn bedoeld voor een \textit{2-way join} (2 bestanden joinen) van de vorm $R\bowtie_{A=B}S$.
+\begin{itemize}
+	\item[J1] \textbf{Nested-loop join (or nested-block join).} Dit is de brute force manier om een \textsc{join}-operatie uit te voeren. Voor elk record $t$ in $R$ en voor elk record $s$ in $S$ wordt er gecontroleerd of er voldaan is aan de \textsc{join}-conditie $t[A] = s[B]$.
+	
+	Als bestand in de buitenste lus kiest men best het bestand met het kleinste aantal fysische blokken.
+	
+	\item[J2] \textbf{Single-loop join (using an access structure to retrieve the matching records).} Voor 1 van de 2 attributen bestaat er een index of hash key, stel attribuut $B$ van $S$. Ga dan alle records $t$ in $R$ af en gebruik de index of hash key van $s$ (dus $s[B]$) als zoekwaarde om snel te controleren of er voldaan is aan $t[A] = s[B]$.
+	
+	Als bestand in de buitenste lus kies men best het bestand met een hoge join-selectiefactor zodat weinig onnodige records opgezocht worden. De \textbf{join-selectiefactor} van $R$ m.b.t. $R[A] = S[B]$ is het aantal records van $S$ dat gemiddeld overeenkomt met een record van $R$.
+
+	\item[J3] \textbf{Sort-merge join.} Als $R$ gesorteerd is volgens $A$ en als $S$ gesorteerd is volgens $B$, dan is een join mogelijk door 1 keer $A$ en $B$ lineair te doorlopen. Dit is uiteraard zeer effici\"ent. Als de bestanden niet geordend zijn, kan men ze best sorteren, dit is nog steeds effici\"ent.
+	
+	Deze methode is ook mogelijk met secundaire indexen: $A$ en $B$ kunnen in volgorde doorlopen worden dankzij de index. Het probleem is dat de records zelf verspreid zijn in het bestand, er moeten dus voortdurend andere blokken ingelezen worden. Dit kan soms ineffici\"ent zijn.
+	
+	\item[J4] \textbf{Partition-hash join.} $A$ en $B$ worden gehasht volgens dezelfde hashfunctie. Stel $R$ heeft het kleinste aantal records. Er wordt een nieuw hashbestand aangemaakt en alle records van $R$ worden gehasht en in buckets geplaatst. Daarna wordt elk record van $S$ overlopen en wordt er gecontroleerd in welke bucket het record zou komen. In die bucket wordt dan naar de overeenkomstige records van $R$ gezocht.
+	
+	In een uitgebreidere versie kan men eerst de bestanden partitioneren met de hashfunctie zodat men bestanden krijgt die volledig in het intern geheugen passen. Die bestanden worden dan per 2 aan elkaar gejoind met eender welke join-methode tot alle gejoinde bestanden aan elkaar hangen. Als men voor het joinen de methode J4 wil gebruiken, moet men een andere hashfunctie gebruiken.
+\end{itemize}
+De \textbf{hybrid hash-join} is een variant van de partition-hash join waarbij een deel van de join-fase al tijdens de partitiefase gebeurt. E\'en van de tijdelijke hashbestanden blijft permanent in het geheugen, zo worden 2 tijdelijke bestanden uitgespaard.
+
+
+
+\section{Algorithms for PROJECT and Set Operations}
+\textsc{Project} -- Als de attributenlijst van de projectie $\pi_\text{{\textless}attributenlijst{\textgreater}}(R)$ een sleutel van $R$ bevat, bevat het resultaat evenveel tupels als $R$. In het andere geval moeten eventuele dubbels verwijderd worden door sortering (dubbels komen dan achter elkaar voor) of hashing. In het laatste geval voeg je een tupel toe aan het resultaat als diens hashwaarde niet voorkomt in de hashtabel
+
+~
+
+\noindent \textsc{Cartesian product} -- De operatie om het Carthesisch product te berekenen is zeer duur. Voor elke combinatie van 2 records moet er namelijk een nieuw record worden aangemaakt. Deze operatie wordt best vermeden, ze kan het best vervangen worden door equivalente operaties tijdens de optimalisatie.
+
+~
+
+\noindent \textsc{Union}, \textsc{intersection} en \textsc{set difference} -- Deze operaties zijn enkel van toepassing op \textbf{type compatible} relaties, deze relaties hebben hetzelfde aantal attributen met bovendien dezelfde domeinen voor elk attribuut. Deze operaties worden ge\"implementeerd door een aangepaste versie van het sort-merge algoritme. De 2 relaties worden eerst gesorteerd volgens dezelfde attributen. Hierna kan elke relatie 1 keer lineair doorlopen worden om het gewenste resultaat te bepalen.
+
+Er kan ook hashing gebruikt worden voor deze operaties. De eerste relatie wordt gehasht naar een \textit{in-memory hashtable} van buckets. De records van de andere relatie worden dan 1 voor 1 doorlopen, de hashwaarde van zo'n record bepaalt dan in welke bucket je moet zoeken naar overeenkomstige records uit de eerste relatie.
+
+In SQL worden er varianten van de hierboven beschreven methoden gebruikt voor de operaties op verzamelingen: \textsc{union all}, \textsc{intersection all} en \textsc{except all}.
+
+
+
+\section[Implementing Aggregate Operations and OUTER JOINs]{Implementing Aggregate Operations and\\ OUTER JOINs}
+\subsection{Implementing Aggregate Operations}
+De aggregatie-operaties \textsc{min} en \textsc{max} kunnen simpel berekend worden als er een \textbf{dense index} bestaat voor het te controleren attribuut. Het resultaat kan dan uit de index berekend worden. Bij \textsc{min} wordt telkens de meest linkse pointer in de $B^+$-boom gevolgd, bij \textsc{max} steeds de meest rechtse.
+
+Voor de operaties \textsc{average}, \textsc{sum} en \textsc{count} moet de index wel een \textbf{dense index} zijn, de bladeren van de boom worden dan doorlopen en het resultaat wordt berekend.
+
+De \textsc{count}(*)-operatie kan ook uit de catalogus gehaald worden, de catalogus houdt namelijk bij hoeveel records een relatie heeft.
+
+Voor een \textsc{group by}-operatie moeten de aggregatie-operaties apart worden toegepast voor elke groep. Het partitioneren van het bestand in de juiste groepen kan gedaan worden door de records eerst te sorteren of te hashen en daarna voor elke groep apart de operatie berekenen. Als er een clustering index bestaat voor de attributen waarop gegroepeerd moet worden, moet er niet gesorteerd of gehasht worden.
+
+
+\subsection{Implementing OUTER JOINs}
+\textsc{Outer join}s kunnen berekend worden door 1 van de \textsc{join}-algoritmen aan te passen. Als er bijvoorbeeld een \textsc{left outer join} berekend moet worden, dan worden niet enkel de records bijgehouden die een match vormen, maar ook de records van de linkse relatie. De records die niet matchen worden dan aangevuld met \texttt{NULL}-waarden.
+
+Men kan ook eerst een \textsc{inner join} berekenen en het resultaat aanvullen met de tupels die niet in de \textsc{inner join} voorkomen (aangevuld met \texttt{NULL}-waarden).
+
+
+
+\section{Combining Operations Using Pipelining}
+Omdat een query meestal uit meerdere relationele operaties bestaat, zullen er veel tijdelijke bestanden aangemaakt worden voor elke opeenvolgende relationele operatie.
+
+Bij \textbf{pipelining} of \textbf{stream-based processing} worden meerdere operaties in 1 algoritme gecombineerd. Zo wordt het resultaat van operatie 1 niet naar een tijdelijk bestand geschreven maar wordt het resultaat direct doorgegeven als invoer aan operatie 2. Zo ontstaat er een stroom van gegevens tussen de operaties (algoritmen): een pijplijn.
+
+
+
+\section{Using Heuristics in Query Optimization}
+Om de prestaties van het uitvoeren van queries te verbeteren, worden er heuristieken toegepast om de interne weergave van de query (de query tree) aan te passen. De \textbf{initial query representation} wordt aangepast met heuristieken tot de \textbf{optimized query representation}, deze komt overeen met de \textit{query excecution strategy}. Hiermee wordt een \textit{query excecution plan} opgesteld die groepen operaties uitvoert, gebaseerd op de beschikbare toegangspaden.
+
+Een belangrijke heuristieke regel stelt dat \textsc{select}- en \textsc{project}-operaties uitgevoerd moeten worden voordat de binaire operaties uitgevoerd worden. Dit komt omdat \textsc{select} en \textsc{project} de grootte van het te controleren bestand sterk verminderen.
+
+
+\subsection{Notation for Query Trees and Query Graphs}
+In een \textbf{query tree} worden relaties uit de query voorgesteld als bladeren en operaties als interne knopen. Bij het uitvoeren van een query wordt een interne knoop uitgevoerd van zodra diens operanden beschikbaar zijn. De interne knoop wordt dan vervangen door de uitvoer van de operatie. De uitvoer begint bij de bladeren en eindigt bij de wortel.
+
+~
+
+\noindent Een \textbf{query graph} is een neutralere voorstelling van een query omdat er geen specifieke volgorde is waarin de operaties moeten worden uitgevoerd. In een query graph worden relaties voorgesteld als \textit{relation nodes} (enkele rand). Constante waarden (meestal van de selectiecondities) worden voorgesteld door \textit{constant nodes} (dubbele rand). Selectie- en join-condities worden voorgesteld als \textit{edges}. Attributen die moeten worden opgevraagd, zijn weergegeven tussen vierkante haakjes.
+
+~
+
+\noindent Uit studies is gebleken dat query trees een betere voorstelling zijn dan query graphs omdat de query optimizer de volgorde van de operaties moet kunnen weergeven.
+
+\textit{Figuur 18.4 op pagina \textbf{682} geeft voorbeelden van query trees en een query graph.}
+
+
+\subsection{Heuristic Optimization of Query Trees}
+Een query kan door verschillende query trees voorgesteld worden. Al deze query trees worden \textbf{equivalent} genoemd. De query parser maakt meestal de \textbf{initial query tree} die zelden direct uitgevoerd wordt. Eerst zal de \textit{heuristic query optimizer} de tree optimaliseren naar een \textbf{final query tree} die veel effici\"enter is om uit te voeren.
+
+~
+
+\noindent \textbf{General transformation rules for relational algebra operations}\\
+Hieronder staan enkele algemene regels om transformaties op queries uit te voeren die gebruikt worden bij het optimaliseren van de query tree.
+\begin{enumerate}
+	\item \textbf{Cascade of $\sigma$.} Een conjunctieve selectieconditie kan omgezet worden in een \textit{cascade} (opeenvolging) van individuele $\sigma$-operaties.
+	\vspace{-3mm}
+	\[\sigma_{c_1 \;\wedge\; c_2 \;\wedge\; \dots \;\wedge\; c_n}(R) \equiv \sigma_{c_1}  (\sigma_{c_2} (\;\dots\; (\,\sigma_{c_n}(R)\,) \;\dots\;)\,)\]
+
+	\item \textbf{Commutativity of $\sigma$.}
+	\vspace{-4mm}
+	\[ \sigma_{c_1}  (\,\sigma_{c_2}(R)\,) \equiv \sigma_{c_2}  (\,\sigma_{c_1}(R)\,) \]
+
+	\item \textbf{Cascade of $\pi$.} In opeenvolgende projecties moet enkel de laatste projectie behouden worden.
+	\vspace{-3mm}
+	\[ \pi_{\textit{list}_1}  (\pi_{\textit{list}_2} (\;\dots\; (\,\pi_{\textit{list}_n}(R)\,) \;\dots\; )\,) \equiv \pi_{\textit{list}_1}(R) \]
+
+	\item \textbf{Commuting $\sigma$ with $\pi$.} Dit geldt enkel als het selectiecriterium $c$ enkel slaat op attributen $A_1,\, A_2,\, \dots,\, A_n$ uit de projectielijst.
+	\vspace{-3mm}
+	\[ \pi_{A_1,\, A_2,\, \dots,\, A_n}(\,\sigma_{c}(R)\,) \equiv \sigma_c(\,\pi_{A_1,\, A_2,\, \dots,\, A_n}(R)\,) \]
+
+	\item \textbf{Commutativity of $\bowtie$ (and $\times$)}.
+	\vspace{-7mm}
+	\begin{align*}
+		R \bowtie_c S &\equiv S \bowtie_c R \\
+		R \times S &\equiv S\times R
+	\end{align*}
+	
+	\item \textbf{Commuting $\sigma$ with $\bowtie$ (or $\times$)}. Deze regels gelden ook voor $\times$.\\
+	Als $c$ enkel slaat op attributen van $R$, dan geldt er dat:
+	\vspace{-3mm}
+	\[ \sigma_c(R \bowtie S) = \sigma_c(R) \bowtie S \]
+	
+	\vspace{-2mm}
+	Als $c=c_1 \wedge c_2$ en als $c_1$ en $c_2$ condities zijn die enkel slaan op attributen van $R$ en $S$, dan geldt er dat:
+	\vspace{-4mm}
+	\[ \sigma_c(R \bowtie S) = \sigma_{c_1}(R) \bowtie \sigma_{c_2}(S) \]
+
+	\item \textbf{Commuting $\pi$ with $\bowtie$ (or $\times$)}. Als alle join-attributen voorkomen in de projectielijst $L = \{ A_1,\, \dots,\, A_n,\, B_1,\, \dots,\, B_m \}$, kan de projectie naar binnen geschoven worden.
+	\vspace{-3mm}
+	\[ \pi_L(R \bowtie_c S) = (\, \pi_{A_1,\, \dots,\, A_n}(R) \,) \; \bowtie_c \; (\, \pi_{B_1,\, \dots,\, B_m}(S) \,) \]
+	
+	\vspace{-2mm}
+	In het andere geval moeten $R$ en $S$ geprojecteerd worden op de join-attributen en de attributen in de projectielijst. Op het einde moet er dan nogmaals geprojecteerd worden op de gevraagde attributen. Bijvoorbeeld:
+	\vspace{-3mm}
+	\[ \pi_A(R \bowtie_{B=C} S) \equiv \pi_A \; (\, \pi_{A,B}(R) \; \bowtie_{B=C} \; \pi_{A,C}(S) \,) \]
+	
+	\item \textbf{Commutativity of set operations.} $\cup$ en $\cap$ zijn commutatief, $-$ niet.
+
+	\item \textbf{Associativity of $\cup$, $\cap$, $\times$, and $\bowtie$}. Deze 4 operaties zijn individueel associatief.
+
+	\item \textbf{Commuting $\sigma$ with set operations.} Als $\theta$ een operatie uit $\{\cup,\cap,-\}$ voorstelt, geldt er:
+	\vspace{-3mm}
+	\[ \sigma_c (R \,\theta\, S) \equiv \sigma_c(R) \;\,\theta\;\, \sigma_c(S) \]
+
+	\item \textbf{The $\pi$ operation commutes with $\cup$}.
+	\vspace{-3mm}
+	\[ \pi_L (R \cup S) \equiv \pi_L(R) \cup \pi_L(S) \]
+
+	\item \textbf{Converting a ($\sigma,\times$) sequence into $\bowtie$}. Dit geldt enkel als de selectieconditie $c$ overeenkomt met een join-conditie.
+	\vspace{-3mm}
+	\[ \sigma_c (R \times S) \equiv (R \bowtie_c S) \]
+\end{enumerate}
+Andere transformaties (zoals de wetten van de Morgan) zijn te vinden in hoofdstukken 4, 5 en 6.
+
+~
+
+\noindent In het algemeen proberen we dus de bladeren en knopen van de query tree te herschikken zodat de query effici\"enter wordt. We proberen eerst de bewerkingen uit te voeren die de grootte van de tijdelijke relaties verminderen. Een voorbeeld van een optimalisatie-algoritme met heuristieken zou er dus als volgt uitzien.
+\begin{enumerate}
+	\item Splits complexe selectie-operaties in simpele selecties (meer flexibiliteit bij het herschikken).
+	\item Schuif selectie-operaties zo ver mogelijk naar beneden (minder relaties).
+	\item Schuif bladeren waarop een strenge selectie gebeurt, meer naar links (kleinere relaties).
+	\item Combineer meermaals een Carthesisch product met een selectie-operatie tot een join-operatie.
+	\item Schuif projecties zo ver mogelijk naar beneden (geen onnodige attributen).
+	\item Identificeer deelbomen die door 1 algoritme kunnen uitgevoerd worden.
+\end{enumerate}
+
+
+\subsection{Converting Query Trees into Query Execution Plans}
+Het uitvoeringsplan wordt voorgesteld als een query tree. Dit plan bevat informatie over de verschillende \textit{access methods} voor elke relatie en welke algoritmen er gebruikt worden bij het berekenen van de verschillende operaties.
+
+Bij een \textbf{materialized evaluation} wordt het resultaat van een operatie bewaard als een tijdelijke relatie, het resultaat wordt dus fysisch gematerialiseerd. Dit is dus het tegenovergestelde van een \textbf{pipelined evaluation}.
+
+
+
+\section{Using Selectivity and Cost Estimates in Query Optimization}
+Bij \textbf{compiled queries} wordt de optimalisatie gedaan bij het compileren van de query. De \textbf{strategy code} kan dan direct worden uitgevoerd als het opgeroepen wordt (\textit{at runtime}).
+
+Als de optimalisatie pas \textit{at runtime} gebeurt, worden de queries \textbf{interpreted queries} genoemd.
+
+~
+
+\noindent De query optimizer gebruikt niet enkel heuristieken. Het schat ook de kost in voor verschillende uitvoeringsstrategie\"en. De optimizer moet er wel op toezien dat er niet te veel tijd verloren gaat bij het inschatten en vergelijken van deze uitvoeringsstrategie\"en.
+
+\textbf{Cost-based optimalization:} er wordt met de traditionele optimalisatietechnieken een oplossing gezocht voor een probleem waarbij de kost om tot die oplossing te komen, is verkleind.
+
+
+\subsection{Cost components for Query Execution}
+\begin{enumerate}
+	\item Het inlezen en wegschrijven van blokken naar het secundair geheugen.
+
+	\item Het tijdelijk opslaan van tussenresultaten op het secundair geheugen.
+
+	\item Het berekenen van de query in de CPU.
+
+	\item Het aantal buffers in het main memory die nodig zijn.
+
+	\item De communicatiekosten van het versturen van data tussen de cli\"ent en de server.
+\end{enumerate}
+Bij grote systemen wordt de nadruk gelegd op het minimaliseren van kosten voor toegang tot het hulpgeheugen. Bij kleine systemen ligt de nadruk eerder op het verminderen van het rekenwerk. Bij zeer grote systemen moet er ook rekening gehouden worden met de communicatiekosten.
+
+
+\subsection{Catalog Information Used in Cost Functions}
+Om de kost van een uitvoeringsstrategie te bepalen, moet er bepaalde informatie bijgehouden worden in de catalog. De volgende eigenschappen worden bijgehouden voor elk bestand: het aantal records $r$, de gemiddelde recordlengte $R$, het aantal bestandsblokken $b$ en de blocking factor $\textit{bfr}$.
+
+Er wordt ook bijgehouden op welke manier de bestanden zijn opgesteld (bv. geordend, met een primary index, \dots). Als er multilevel indexen gebruikt worden, worden het aantal levels van elk multilevel index (primary, secondary of clustering) bijgehouden.
+
+Het aantal ($d$) verschillende waarden dat een attribuut kan hebben en de \textbf{attribute selectivity} $\textit{sl}$ (zie 18.3.1) worden ook bijgehouden. Met $\textit{sl}$ kan een schatting gemaakt worden voor de \textbf{selection cardinality} $s = \textit{sl} \cdot r$ van een attribuut. Dit is het gemiddeld aantal records dat voldoet aan een ``=''-selectieconditie op dat attribuut.
+
+De optimizer houdt ook een histogram bij voor attributen waarvan de waarden niet evenwichtig verdeeld zijn over de records.
+
+
+\subsection{Examples of Cost Functions for SELECT}
+Hieronder staan de functies opgesomd om de kost te bepalen voor de algoritmen uit 18.3.1. De kost wordt uitgedrukt in het aantal block transfers.
+\begin{enumerate}
+	\item[S1] \textbf{Linear search (brute force) approach.} Alle file blocks moeten doorlopen worden, het aantal block transfers is dan gemiddeld $C_{S1a} = b$. Als er een ``=''-conditie gebruikt wordt op een sleutelattribuut, is dit gemiddeld $C_{S1b} = b/2$.
+
+	\item[S2] \textbf{Binary search.} Er worden ongeveer $C_{S2} = \log_2 (b) + \lceil s/\textit{bfr} \rceil - 1\;$ file block transfers gedaan.
+
+	\item[S3] \textbf{Using a primary index or hash key to retrieve a single record.}\\
+	Bij het gebruik van een \textit{primary key}, haalt het algoritme 1 bestandsblok op per index level plus nog 1 bestandsblok. Dit geeft dus $C_{S3a} = x+1$ blocks met $x$ het aantal index levels.\\
+	Bij het gebruik van een \textit{hash key}, wordt er meestal maar 1 blok opgehaald (voor static en linear hashing), dus $C_{S3b} = 1$. Bij extendible hashing (zie 17.8) worden er 2 blokken opgehaald.
+
+	\item[S4] \textbf{Using an ordering index to retrieve multiple records.} Als gemiddeld de helft van de records voldoet aan de conditie, dan is de kost ongeveer $C_{S4} = x + (b/2)$. Deze schatting kan sterk verschillen naargelang de verdeling van de waarden voor een bepaald attribuut.
+
+	\item[S5] \textbf{Using an clustering index to retrieve multiple records.} Als $s$ de \textit{selection cardinality} van het ge\"indexeerde attribuut is, zullen er $\lceil s/\mathit{bfr} \rceil$ bestandsblokken opgeroepen worden. Bovendien wordt er ook 1 blok opgehaald voor elk index level. Het totaal aantal opgehaalde blokken is dan $C_{S5} = x + \lceil s/\mathit{bfr} \rceil$.
+
+	\item[S6] \textbf{Using a secondary (B$^+$-tree) index.} Als er een secondary index gebruikt wordt op een sleutelattribuut, zijn er $C_{S6a} = x + 1$ bloktoegangen nodig.\\
+	Als dit niet voor een sleutelattribuut gebeurt, is het aantal block transfers $C_{S6b} = x + 1 + s$, dit is in het slechtste geval waarbij elke record in een aparte blok zit.\\
+	Als de operaties $\{<,\leqslant,>,\geqslant\}$ gebruikt worden in de conditie, zal ongeveer de helft van de first-level index blokken ingelezen worden. Ook de helft van de file records zullen via de index ingelezen worden. Dit komt dan neer op $C_{S6c} = x + (b_{I1}/2) + (r/2)$
+
+	\item[S7] \textbf{Conjunctive selection.} De methoden S1 tot en met S6 kunnen hiervoor gebruikt worden.
+
+	\item[S8] \textbf{Conjunctive selection using a composite index.} Hiervoor kunnen we de methoden S3a, S5 of S6b gebruiken, afhankelijk van het type index.
+\end{enumerate}
+
+
+\subsection{Examples of Cost Functions for JOIN}
+Om een idee te krijgen van de kost van een \textsc{join}-operatie, wordt er meestal geschat hoeveel records er zullen zijn na een \textsc{join}-operatie. Deze waarde wordt meestal als de \textbf{join selectivity} $\textit{js}$ bijgehouden. Dit is de verhouding van het aantal tupels na een \textsc{join}-operatie tegenover het aantal tupels na een berekening van het Carthesisch product, kortom:
+\vspace{-2mm}
+\[ \textit{sl} = \dfrac{ |R \bowtie_c S| }{ |R \times S| } = \dfrac{ |R \bowtie_c S| }{ |R|\cdot|S| } \]
+Als er geen join-conditie $c$ is, geldt er dat $\textit{sl} = 1$. In dit geval is de join hetzelfde als het berekenen van het Carthesisch product.
+
+
+\subsection{Multiple Relation Queries and JOIN Ordening}
+Een \textbf{left-deep tree} is een binaire boom waarin het rechtse kind van elke inwendige knoop altijd een \textit{base relation} is. Deze bomen worden gebruikt voor queries met veel \textsc{join}-operaties.
+
+De optimizer kan niet van alle mogelijke query trees voor queries met veel \textsc{join}-operaties, de kosten inschatten. Dit zou namelijk te veel tijd in beslag nemen. De structuur van de query tree wordt dan beperkt tot dat van een left-deep tree. Het aantal mogelijke query trees is dan veel kleiner. De optimizer neemt de left-deep tree met de laagste kost.
+
+~
+
+\noindent \textit{Een voorbeeld van een left-deep tree vind je op figuur 18.7 op pagina \textbf{698}.}
+
+
+\subsection{Example to Illustrate Cost-Based Query Optimization}
+Op pagina \textbf{699-701} wordt er een voorbeeld gegeven om de theorie te illustreren.
+
+
+
+\section{Overview of Query Optimization in Oracle}
+De Oracle DBMS kent 2 verschillende query optimalisatietechnieken:
+\begin{itemize}
+	\item De \textbf{rule-based} optimalisatietechniek kiest een uitvoeringsplan gebaseerd op operaties die geordend zijn op heuristiek.
+
+	\item Bij de \textbf{cost-based} optimalisatietechniek kiest de optimizer het toegangspad met de laagste kost.
+\end{itemize}
+De Oracle query optimizer kan ook \textbf{hints} van de gebruiker gebruiken bij de optimalisatie van queries.
+
+
+
+\section{Semantic Query Optimization}
+Bij deze techniek worden de constraints gebruikt die toegepast worden op het databaseschema. Indien er bijvoorbeeld gezocht wordt naar werknemers die meer verdienen dan hun baas, kan de optimizer zien dat er een constraint is die dit voorkomt. Het zou dus niet zinvol zijn om deze query uit te voeren omdat er toch geen oplossingen zijn. Een nadeel bij deze methode is dat het doorlopen van alle constraints veel tijd in beslag kan nemen.

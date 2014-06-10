@@ -1,0 +1,262 @@
+\chapter{Database Design Theory: Introduction to Normalization Using Functional and Multivalued Dependencies}
+\section{Informal Design Guidelines for Relation Schemas}
+De volgende vier informele richtlijnen kunnen gebruikt worden om de kwaliteit van een relationeel schema te bepalen.
+
+
+\subsection{Imparting Clear Semantics to Attributes in Relations}
+Wanneer verschillende attributen samen gegroepeerd worden tot een relationeel schema, wordt ervan uitgegaan dat attributen die bij een relatie horen ook een werkelijke betekenis hebben. De \textbf{semantiek} van een relatie verwijst naar de betekenis ten gevolge van de interpretatie van attributen in een tupel. Meestal is een eenvoudig uit te leggen schema ook beter. 
+
+\begin{description}
+	\item[Richtlijn 1.] Ontwerp een relationeel schema zodat zijn betekenis eenvoudig uit te leggen is. Combineer geen attributen van verschillende entiteits- en relatietypes in een nieuwe relatie.
+\end{description}
+
+
+\subsection{Redundant Information in Tuples and Update Anomalies}
+E\'en van de doelen van het ontwerpen van een schema is de benodigde opslagplaats voor de relaties te minimaliseren. Het groeperen van attributen in aparte relaties zorgt voor een verminderd geheugengebruik. Wanneer dit niet zou gebeuren en bijvoorbeeld het resultaat van een natural join van twee relaties als nieuwe relatie bijgehouden wordt, dan is het te verwachten dat verschillende tupels overlappende informatie bevatten. Terwijl deze informatie, wanneer ze in aparte relaties beschreven wordt, slechts \'e\'en keer wordt opgeslagen.
+
+Een bijkomend probleem bij het opslaan van natural joins van relaties, is dat deze leiden tot zogenaamde \textbf{update anomalies}. Laat $R$ de relatie zijn die bekomen wordt uit de natural join van $S$ en $T$: $R=S*T$. Dan kunnen deze anomalie\"en onderverdeeld worden als volgt. 
+\begin{description}
+	\item[Insertion anomalies.] Bij het toevoegen van een tupel $s$ (van relatie $S$) aan relatie $R$, moeten alle attributen van de tupel $t$ uit $T$ waarmee $s$ gejoind werd, gekend zijn en correct ingevoerd worden. Alleen dan is deze tupel $s$ consistent met de andere tupels uit $S$ die met $t$ gejoind werden. Als enkele waarden niet gekend zijn, kan men \texttt{NULL} gebruiken.
+
+	Als bovendien de primaire sleutel van $R$ deze uit $S$ bevat, is het onmogelijk tupels uit $T$ toe te voegen die geen overeenkomstige tupel hebben in $S$.
+
+	\item[Deletion anomalies.] Stel, in $R$ komt een tupel $s$ voor die samenhangt met een bepaalde tupel $t$, deze $s$ is de laatste tupel die samenhangt met die tupel $t$. Als men dan die tupel $s$ verwijdert (en dus ook $t$), zijn we alle informatie over die tupel $t$ kwijt.
+
+	\item[Modification anomalies.] Als men de waarde van een attribuut in een tupel $t$ wijzigt, dan moeten alle andere tupels in $R$ die $t$ bevatten, ook gewijzigd worden.
+\end{description}
+\textit{Zie de voorbeelden op pagina \textbf{491-493}.}
+\begin{description}
+	\item[Richtlijn 2.] Ontwerp een relationeel schema op zo'n manier dat er geen toevoeg-, weglaat- of wijzigingsanomalie\"en aanwezig zijn in de relaties. Moesten deze er toch zijn, vermeld dit dan duidelijk.
+\end{description}
+
+
+\subsection{\texttt{NULL} values in Tuples}
+Wanneer veel attributen samengevoegd worden in 1 relatie, maar als sommige attributen maar voor enkele tupels een zinvolle waarde hebben, kunnen er veel \texttt{NULL}-waarden in de tabel worden toegevoegd. Dit kan leiden tot problemen bij onder andere joins en aggregaatfuncties. 
+
+\begin{description}
+	\item[Richtlijn 3.] Vermijd, voor zover dit mogelijk is, om attributen die vaak \texttt{NULL}-waarden opleveren, aan relaties toe te voegen.
+\end{description}
+
+
+\subsection{Generation of Spurious Tuples}
+\begin{description}
+	\item[Richtlijn 4.] Ontwerp een relationeel schema op zo'n manier dat bij het joinen, met gelijkheidscondities op attributen die primaire sleutels of verwijssleutels zijn, geen \textbf{spurious} (onechte) tupels gecre\"eerd worden. Vermijd relaties die overeenkomstige attributen hebben die geen primaire sleutel -- verwijssleutel verband hebben
+\end{description}
+
+
+\subsection{Summary and Discussion of Design Guidelines}
+De vier richtlijnen die besproken werden, laten op een informele manier toe de kwaliteit van een relationeel schema te garanderen. In de rest van dit hoofdstuk presenteren we formele concepten om de kwaliteit van individuele relationele schema's te kunnen bepalen.
+
+
+
+\section{Functional Dependencies}
+\subsection{Definition of Functional Dependency}
+\begin{description}
+	\item[Definitie.] Zij $R$ een relatieschema met $R = \{A_1, A_2, \dots, A_n\}$ en $X$ en $Y$ attributenverzamelingen die deelverzamelingen zijn van $R$.\\
+	Een \textbf{functionele afhankelijkheid} $X \rightarrow Y$ specifieert een restrictie op de mogelijke tupels die in alle mogelijke extensies $r$ van $R$ kunnen voorkomen.\\
+	De restrictie bepaalt dat als er voor 2 tupels $t_1$ en $t_2$ in $r$ geldt dat $t_1[X] = t_2[X]$, dan moet er ook gelden dat $t_1[Y] = t_2[Y]$.
+
+	Formeel: $X \rightarrow Y$ als en slechts als $X \neq \emptyset$ en als er in alle mogelijke extensies $r$ van $R$ geldt: $t_1,t_2 \in r$ en $t_1[X] = t_2[X] \;\Longrightarrow\; t_1[Y] = t_2[Y]$.
+\end{description}
+De attributen in $Y$ hangen dus af van de attributen in $X$ (of ze worden bepaald door de attributen in $X$). Anders gezegd: $Y$ is \textbf{functioneel afhankelijk} (\textit{FD}) van $X$.
+
+\newpage
+\noindent Enkele opmerkingen:
+\begin{itemize}
+\item De woorden ``in alle \textit{mogelijke} extensies'' hangt af van de betekenis van de relatie. Uit die betekenis volgen bepaalde restricties waaraan de extensies moeten voldoen.\\
+Een FD is dus een eigenschap van een relationeel schema $R$, \textbf{niet} een eigenschap van een bepaalde relatietoestand van $R$.
+\item Als $X$ een kandidaatsleutel is van een relatie $R$, dan geldt $X \rightarrow Y$ voor elke $Y \in R$. Dit komt omdat geen 2 tupels in een legale toestand $r(R)$ dezelfde sleutelwaarde mogen hebben.
+\item Als in $R$ geldt dat $X \rightarrow Y$, wil dat niets zeggen over $Y \rightarrow X$ in $R$.
+\end{itemize}
+Een functionele afhankelijkheid is een eigenschap van de betekenis van de attributen. Ze beschrijft expliciet bepaalde restricties waaraan een relatie steeds moet voldoen. Men kan functionele afhankelijkheden in schema's aanduiden met behulp van pijlen.
+
+Als er een functionele afhankelijkheid optreedt in een schema, dan wordt deze vastgelegd door middel van een restrictie. Op deze manier wordt ervoor gezorgd dat de FD geldt voor alle tupels in alle extensies van $R$. Een extensie $r(R)$ is een legale extensie als ze voldoet aan alle functionele afhankelijkheidsrestricties.
+
+~
+
+\noindent We bespreken 3 basic afleidingsregels, deze zijn \textbf{correct} en \textbf{volledig}.
+\begin{itemize}
+\item \textbf{FD1 -- Reflexiviteitsregel:} $Y \subseteq X \;\Rightarrow\; X \rightarrow Y$.
+\item \textbf{FD2 -- Uitbreidingsregel:} $\{\, X \rightarrow Y \,\} \models\; XZ \rightarrow YZ$.
+\item \textbf{FD3 -- Transitiviteitsregel:} $\{\, X \rightarrow Y \,,\, Y \rightarrow Z \,\} \models\; X \rightarrow Z$.
+\end{itemize}
+
+\noindent Er bestaan ook 3 extra afleidingsregels, deze kunnen bewezen worden met de basic afleidingsregels.
+\begin{itemize}
+\item \textbf{FD4 -- Decompositieregel:} $\{\, X \rightarrow YZ \,\} \models\; X \rightarrow Y$.
+\item \textbf{FD5 -- Verenigingssregel:} $\{\, X \rightarrow Y \,,\, X \rightarrow Z \,\} \models\; \{\, X \rightarrow YZ \,\}$.
+\item \textbf{FD6 -- Pseudo-transitiviteitsregel:} $\{\, X \rightarrow Y \,,\, WY \rightarrow Z \,\} \models\; WX \rightarrow Z$.
+\end{itemize}
+
+\noindent Uit de betekenis van relaties en attributen leidt men eerst een verzameling functionele afhankelijkheden $F$ af. Met de afleidingsregels kunnen dan alle FD's gevonden worden die uit $F$ volgen. De \textbf{sluiting} $F^+$ van $F$ is de verzameling van alle FD's die door $F$ ge\"impliceerd worden.
+
+$X_{F^+}$ is de sluiting van $X$ ten opzichte van $F$, met andere woorden: de verzameling van alle attributen die bepaald zijn door $X$. Om $F^+$ te berekenen, moet men dan voor elke $X \in F$ waarvoor geldt dat $X \rightarrow Y$, met de afleidingsregels $X_{F^+}$ afleiden.
+
+Een voorbeeld van zo'n sluiting ten opzichte van $F$: $\{\, \textit{Ssn} \,\}^+ = \{\, \textit{Ssn} \,,\, \textit{EName} \,\}$. Merk op dat $X$ ook meerdere attributen kan bevatten.
+
+~				
+
+\noindent Zij $E$ en $F$ verzamelingen FD's van $R$.
+
+$E$ wordt \textbf{overdekt} door $F$ a.s.a. $E \subseteq F^+$. Alle FD's in $E$ volgen dan uit $F$ via de afleidingsregels en $E^+ \subseteq F^+$. Om na te gaan of $E$ wordt overdekt door $F$ moet men voor alle $X \rightarrow Y$ in $E$ de sluiting $X_{F^+}$ bepalen en controleren of $Y \subseteq X_{F^+}$.
+
+$E$ en $F$ zijn \textbf{equivalent} a.s.a. $E^+ = F^+$.
+
+
+
+\section{Normal Forms Based on Primary Keys}
+\subsection{Normalization of Relations}
+Normalisatie van data is een proces waarbij relationele schema's geanalyseerd worden op basis van hun functionele afhankelijkheden en primaire sleutels, hierdoor verkrijgt men de gewenste eigenschappen die de redundantie minimaliseren en anomalie\"en beperken. Kortom: normalisatie brengt een relatie in een bepaalde normaalvorm. Hoe hoger de normaalvorm, des te minder functionele afhankelijkheden zich kunnen voordoen.
+
+De normalisatieprocedure levert:
+\begin{itemize}
+	\item Een formeel model voor het analyseren van relationele schema's op basis van hun sleutels en functionele afhankelijkheden.
+	\item Een serie normaalvormtesten die uitgevoerd kunnen worden op individuele relationele schema's zodat de relationele database genormaliseerd kan worden tot het gewenste niveau.
+\end{itemize}
+\begin{description}
+	\item[Definitie.] Een \textbf{normaalvorm} legt bepaalde eisen op aan relaties. De normaalvorm van een relatie is de hoogste normaalvormvoorwaarde waaraan ze voldoet en geeft dus de graad van normalisatie aan.
+\end{description}
+De attributenverzameling van een relatieschema $S_R$ noteren we met $U_R$, de verzameling afhankelijkheden schrijven we als $F_R$.	Er geldt dat $S_R = \text{\textless} U_R , F_R \text{\textgreater}$.
+\begin{description}
+	\item[Definitie.] Een verzameling relatieschema's $\delta(S_R) = \{S_{R1}, S_{R2}, \dots, S_{Rk}\}$ is een \textbf{decompositie} van $S_R$ a.s.a. $U_R = U_{R1} \cup U_{R2} \cup \dots \cup U_{Rk}$.
+\end{description}
+Decompositie is dus het opdelen van relatieschema's die niet voldoen aan de eisen in relatieschema's die wel voldoen aan de eisen. Een goede decompositie van een schema bevat dezelfde informatie maar bevat geen onnodige relaties. Een goede decompositie is ook effici\"ent te onderhouden.
+\begin{description}
+	\item[Definitie.] Het \textbf{normaliseren} van een gegevensbank is voor elke relatie in die gegevensbank een decompositie bepalen zodat alle resulterende relaties in een bepaalde normaalvorm zijn.
+\end{description}
+De normaalvormen toegepast op afzonderlijke relaties bieden geen voldoende voorwaarde voor een goed relationeel schema. Er moet nog rekening gehouden worden met eigenschappen van het relationeel schema als een geheel, waaronder hoofdzakelijk de volgende eigenschappen: 
+\begin{itemize}
+	\item De \textbf{nonadditive join} of \textbf{lossless join} eigenschap garandeert dat, na decompositie van de relaties, er geen onechte tupels gegenereerd worden bij het joinen van relaties.
+	\item De \textbf{dependency preservation} eigenschap garandeert dat de functionele afhankelijkheden behouden blijven na decompositie.
+\end{itemize}
+
+
+\subsection{Practical Use of Normal Forms}
+Normalisatie wordt gebruikt bij het ontwerpen van een database om de kwaliteit van het ontwerp te garanderen. Soms kunnen sommige relaties echter in een lagere normaalvorm gehouden worden om performantieredenen. Dit komt omdat een hogere normaalvorm een speciaal geval is van de normaalvorm er net onder.
+\begin{description}
+	\item[Alternatieve definitie. ] Er wordt gesproken van \textbf{decompositie} wanneer de join van twee relaties in hogere normaalvorm bewaard wordt als een basis relatie, in lagere normaalvorm.
+\end{description}
+
+
+\subsection{Definitions of Keys and Attributes Participating in Keys}
+\begin{description}
+	\item[Definitie.] Een \textbf{supersleutel} $K$ van een relatie $R$ determineert elk attribuut in $R$.
+
+	Anders gezegd: $K$ is een supersleutel van een relatie $R$ met schema $S_R = \text{\textless} U,F \text{\textgreater}$ a.s.a. $K \subseteq U$ zodat voor geen 2 verschillende tupels $t_1$ en $t_2$ uit een legale extensie geldt dat $t_1[K] = t_2[K]$.
+
+	Anders gezegd: $K$ is een supersleutel voor $R$ a.s.a. $K \subseteq U$ en $K \rightarrow U \in F^+$.
+
+	Anders gezegd: $K$ is een supersleutel a.s.a. $K_F^+ = U$.
+
+	\item[Definitie.] $K$ is een \textbf{kandidaatsleutel} voor $R$ met schema $S_R = \text{\textless} U,F \text{\textgreater}$ a.s.a. $K$ is een supersleutel voor $R$ en geen enkele echte deelverzameling van $K$ is een supersleutel voor $R$.
+
+	\item[Definitie.] Een attribuut $A$ is een \textbf{sleutelattribuut} voor een relatie $R$ met schema $S_R = \text{\textless} U,F \text{\textgreater}$ a.s.a. er bestaat een sleutel $K$ voor $R$ waarvoor geldt $A \in K$.
+\end{description}
+Uit de kandidaatsleutels kiest men een \textbf{primaire sleutel}, de andere kandidaatsleutels noemt men secundaire sleutels. Attributen in de primaire sleutel mogen nooit \texttt{NULL} zijn.
+
+~
+
+\noindent Een relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de nulde normaalvorm als er geen voorwaarden zijn opgelegd aan de attributen. De attributen mogen dus samengesteld of meerwaardig zijn.
+
+
+\subsection{First Normal Form}
+\begin{description}
+	\item[Definitie.] Een relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de eerste normaalvorm (\textbf{1NF}) a.s.a. het domein van elk attribuut van $U$ enkelvoudig is.
+	
+	Anders gezegd: een attribuut van $U$ mag geen verzamelingen of tupels als waarde hebben.
+\end{description}
+Als in een relatie toch \textbf{meerwaardige attributen} voorkomen, worden er meerdere tupels voorzien (\textit{redundantie}) of wordt er een nieuwe relatie gecre\"eerd met dezelfde sleutel.
+
+Eventuele \textbf{samengestelde attributen} worden opgesplitst in meerdere attributen.
+
+Geneste attributen (meervoudige attributen die samenstellingen zijn) worden op gelijkaardige manier weggewerkt.
+
+~
+
+\noindent Merk op dat de nieuwe gegevensbank dezelfde informatie bevat als de oorspronkelijke. Er is tevens geen enkele eis gesteld aan de verzameling van functionele afhankelijkheden $F$.
+
+
+\subsection{Second Normal Form}
+De tweede normaalvorm is vooral belangrijk als aanloop naar de derde normaalvorm.
+\begin{description}
+	\item[Definitie.] Zij $X \rightarrow Y$.\\
+	$Y$ is \textbf{partieel functioneel afhankelijk} van $X$ als er een $Z \subset X$ bestaat zodat $Z \rightarrow Y$.\\
+	Anders is $Y$ \textbf{volledig functioneel afhankelijk} van $X$.
+
+	Anders gezegd: $Y$ is partieel afhankelijk als een attribuut $A \in X$ kan verwijderd worden uit $X$ en er na de verwijdering nog steeds geldt dat $X \rightarrow Y$.
+
+	\item[Definitie.] Een relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de tweede normaalvorm (\textbf{2NF}) a.s.a. voor geen enkel niet-sleutelattribuut $A$ van $U$ geldt dat $A$ partieel functioneel afhankelijk is van een kandidaatsleutel van $R$.
+
+	Anders gezegd: voor elk niet-sleutelattribuut moet de hele primaire sleutel nodig zijn om het determineren.
+\end{description}
+Testen of een schema voldoet aan 2NF, gebeurt door de functionele afhankelijkheden te testen waarbij het linkerlid een deel is van de primaire sleutel. Als de primaire sleutel uit 1 enkel attribuut bestaat, is automatisch voldaan aan de voorwaarde.
+
+Om een relatieschema $S_{R1} = \text{\textless} U_{R1}, F_{R1} \text{\textgreater}$ van 1NF naar 2NF te brengen, moet voor elk attribuut $A$ dat partieel functioneel afhankelijk is van een kandidaatsleutel $K$, het volgende gedaan worden:
+\begin{enumerate}
+	\item Zoek een subset $K' \subset K$ waarvan $A$ volledig functioneel afhankelijk is.
+	\item Elimineer $A$ uit $U_{R1}$.
+	\item Maak een nieuw relatieschema $S_{R2}$ met als attributenverzameling $U_{R2} = K' \cup A$.
+\end{enumerate}
+Op die manier blijft alle informatie behouden, er wordt wel een nieuw relatieschema toegevoegd.
+
+
+\subsection{Third Normal Form}
+\begin{description}
+	\item[Definitie.] Een functionele afhankelijkheid $X \rightarrow Y$  in $R$ is een \textbf{triviale} functionele afhankelijkheid a.s.a. $Y \subseteq X$.
+
+	\item[Definitie.] Een functionele afhankelijkheid $X \rightarrow Y$ is een \textbf{transitieve} functionele afhankelijkheid a.s.a. er een $Z$ bestaat zodat de volgende 3 voorwaarden voldaan zijn:
+	\begin{enumerate}
+		\item $Z$ is volledig en \textit{niet-triviaal} functioneel afhankelijk van $X$.
+		\item $Z$ is geen (echte of onechte) deelverzameling van een kandidaatsleutel.
+		\item $Y$ is \textit{niet-triviaal} functioneel afhankelijk van $Z$.
+	\end{enumerate}
+	We zeggen dat $Y$ \textbf{transitief} functioneel afhankelijk is van $X$ via $Z$.
+
+	Anders gezegd: $X \rightarrow Y$ en $X \rightarrow Z \rightarrow Y$.
+
+	\item[Definitie.] Een 2NF-relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de derde normaalvorm (\textbf{3NF}) a.s.a. voor geen enkel niet-sleutelattribuut $A$ van $U$ geldt dat:\\
+	$A$ is \textit{transitief} functioneel afhankelijk van een of andere kandidaatsleutel van $R$.
+
+	\item[Alternatieve definitie.] Een 1NF-relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de derde normaalvorm (\textbf{3NF}) a.s.a. voor elke \textit{niet-triviale} functionele afhankelijkheid $X \rightarrow A$ van $F^+$ geldt dat:\\
+	$A$ is een sleutelattribuut \textbf{of} $X$ is een supersleutel voor $R$.
+\end{description}
+Om een relatieschema $S_{R2} = \text{\textless} U_{R2}, F_{R2} \text{\textgreater}$ van 2NF naar 3NF te brengen, moet voor elk niet-sleutelattribuut $A$ dat transitief functioneel afhankelijk is van een kandidaatsleutel  $K$ via $Z$, het volgende gedaan worden:
+\begin{enumerate}
+	\item Elimineer $A$ uit $U_{R2}$.
+	\item Maak een nieuw relatieschema $S_{R3}$ met als attributenverzameling $U_{R3} = Z \cup A$.
+\end{enumerate}
+
+~
+
+\noindent Een relatieschema voldoet niet aan de algemene definitie van 3NF als:				
+\begin{itemize}
+	\item een niet-sleutelattribuut een ander niet-sleutelattribuut determineert (transitieve afhankelijkheid).
+	\item een echte deelverzameling van een sleutel in $R$ een niet-sleutelattribuut functioneel determineert (parti\"ele afhankelijkheid).
+\end{itemize}
+\textit{Zie tabel 14.1 op pagina \textbf{509} voor een overzicht van de 3 normaalvormen die we tot nu bespraken.}
+
+
+
+\section{General Definitions of Second \& Third Normal Forms}
+Het zijn parti\"ele en transitieve afhankelijkheden die leiden tot de update-anomalie\"en die eerder besproken werden. In het boek werden tot nu toe de parti\"ele en transitieve afhankelijkheden van de \textit{primaire sleutel} verboden door 2NF en 3NF. Er wordt echter geen rekening gehouden met eventuele andere kandidaatsleutels.
+
+In deze samenvatting werd wel al rekening gehouden met de parti\"ele en transitieve afhankelijkheden. 14.4 in het boek mag dus overgeslagen worden als je deze samenvatting strikt volgt. Het lezen van 14.4 kan echter geen kwaad.
+
+
+\section{Boyce-Codd Normal Form}
+In de derde normaalvorm zijn er nog steeds functionele afhankelijkheden toegestaan binnen de sleutels zelf. Deze worden weggewerkt in de Boyce-Codd normaalvorm.
+
+\begin{description}
+\item[Definitie. ] Een 3NF-relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de \textbf{Boyce-Codd normaalvorm} a.s.a. voor geen enkel sleutelattribuut $A$ van $U$ geldt dat:\\
+$A$ is partieel of transitief functioneel afhankelijk van een of andere kandidaatsleutel van $R$.
+
+\item[Alternatieve definitie. ] Een 1NF-relatieschema $S_R = \text{\textless} U,F \text{\textgreater}$ is in de \textbf{Boyce-Codd normaalvorm} a.s.a. voor elke \textit{niet-triviale} functionele afhankelijkheid $X \rightarrow A$ in $F^+$ geldt dat $X$ een supersleutel is voor $R$.
+\end{description}
+
+\noindent Merk op dat deze 2 definities enorm veel lijken op de definities van 3NF, met maar kleine verschillen.
+
+~
+
+\noindent Om van 1NF naar BCNF over te gaan, volg je het pad van 1NF naar 3NF maar houd je rekening met sleutelattributen.
+
+BCNF werkt alle ongewenste functionele afhankelijkheden weg. Helaas is BCNF niet altijd bereikbaar zonder andere problemen te cre\"eren. Daarenboven worden sommige functionele afhankelijkheden moeilijker te controleren.

@@ -1,0 +1,149 @@
+\chapter{Overview of Database Languages and Architectures}
+\textit{DBMS packages} zijn gegroeid van \'e\'en ge\"integreerd systeem naar \textit{modulaire} systemen. Deze bestaan uit verschillende delen. Standaard wordt er gewerkt met twee modules: een \textbf{client module} die de gebruikersinteractie moet verzorgen en een \textbf{server module} die zaken als dataopslag, toegang, en het doorzoeken van de database op zich neemt.
+
+
+\section{Data Models, Schemas, and Instances}
+Een belangrijk kenmerk van databases is dat ze een soort van \textbf{data abstraction} voorzien. Hiermee bedoelt men dat zaken als de \textit{schijfopslag} van de data worden genegeerd, terwijl enkel het belangrijkste om de data te kunnen bestuderen en interpreteren wordt getoond.
+
+Er worden ook meer en meer hoogniveau operaties ge\"implementeerd zodat manipulatie of interpretatie van de opgeslagen data zo eenvoudig mogelijk wordt. Dit wordt ook wel het \textit{dynamische aspect} van de database genoemd.
+
+\subsection{Categories of Data Models}
+Er zijn een drietal interessante, veel voorkomende datamodellen:
+\begin{itemize}
+\item{Hoog-niveau of \textbf{conceptuele} datamodellen}\\
+Deze datamodellen gebruiken concepten als \textit{entiteiten}, \textit{attributen} en \textit{relaties}:
+\vspace{-2mm}
+\begin{itemize}
+\item{een entiteit} stelt een object uit de echte wereld voor
+\item{een attribuut} stelt een eigenschap van zo een entiteit voor
+\item{een relatie} stelt een associatie voor tussen twee of meer entiteiten
+\end{itemize}
+
+\item{Representatieve of \textbf{implementatie}-datamodellen}\\
+Deze datamodellen worden in commerci\"ele databasesystemen het vaakst gebruikt. Ze maken gebruik van relaties, maar ook van \textit{record structures}.
+
+\item{Laag-niveau of \textbf{fysieke} datamodellen}\\
+Deze datamodellen beschrijven hoe data in bestanden wordt opgeslagen in het geheugen door informatie als het recordformaat, recordsortering en toegangspaden te beschrijven.
+\end{itemize}
+
+\subsection{Schemas, Instances and Database State}
+Er moet bij elk datamodel een onderscheid gemaakt worden tussen de beschrijving van een database en de database zelf.
+
+De beschrijving van een database gebeurt in een \textbf{database schema}, ook wel een \textit{schema-diagram} genoemd. Dit schema wordt ontwikkeld v\'o\'or het maken van de database en wordt niet dikwijls gewijzigd. Dit diagram geeft dus eigenlijk de structuur (de tabellen en hun kolomhoofden) weer van een database.
+
+De eigenlijke data van een database verandert regelmatig d.m.v. manipulaties. Elke momentopname in de tijd van de data in een database heet de \textbf{database state} (\textit{databasetoestand} of \textbf{instantie}).
+
+Je kan het ook als volgt beschrijven: het schema is de \textbf{intensie} van de database, terwijl een databasetoestand een \textbf{extensie} van dit schema is.
+
+
+\section{Three-Schema Architecture and Data Independence}
+De \textbf{3-schema architectuur} probeert de volgende drie kenmerken te bereiken en visualiseren:
+\begin{itemize}
+\item Een \textit{catalog} gebruiken om het schema in op te slaan zodat de database zelfbeschrijvend wordt.
+\item Isolatie tussen programma's en opgeslagen data.
+\item Ondersteunen van meerdere \textit{user views} (manieren om de data te kunnen interpreteren).
+\end{itemize}
+
+\subsection{The Three-Schema Architecture}
+In deze architectuur kunnen schema's op drie niveaus gedefini\"eerd worden:
+\begin{itemize}
+\item Het \textbf{interne niveau} heeft een intern schema dat de fysische opslagstructuur en de toegangspaden beschrijft.
+\item Het \textbf{conceptuele niveau} heeft een conceptueel schema (implementatiemodel) dat de structuur van de database weergeeft voor gebruikers.
+\item Het \textbf{externe niveau} of \textbf{view niveau} heeft een aantal \textit{user views} (hoe gebruikers data zien).
+\end{itemize}
+Deze niveaus moeten uiteraard kunnen samenwerken. Bij het opvragen van data moet deze data aangepast worden om binnen de \textit{view} van een zekere gebruik te passen. Deze transformaties tussen de verschillende niveaus heten \textit{mappings}.
+
+\subsection{Data Independence}
+\textbf{Data independence} binnen de \textit{3-schema architectuur} houdt in dat je het schema van \'e\'en niveau kan veranderen zonder dat je het schema van het niveau direct daarboven moet aanpassen. Er zijn twee types:
+\begin{itemize}
+\item \textbf{Logical data independence} houdt in dat je het conceptueel schema kan aanpassen zonder dat je daarvoor de externe schema's of applicaties moet voor aanpassen. Je moet dus de structuur kunnen aanpassen en constraints kunnen defini\"eren zonder dat je daarvoor een aanpassing moet doen aan die externe schema's of applicaties.
+\item \textbf{Physical data independence} betekent dat je het intern schema kan aanpassen, zonder dat je aan het conceptueel schema dat er boven draait moet moet raken.
+\end{itemize}
+De laatste soort onafhankelijkheid komt in de meeste databases wel voor, maar de eerste soort is iets moeilijker te verkrijgen.
+
+
+\section{Database Languages and Interfaces}
+\subsection{DBMS Languages}
+Er zijn 4 theoretische DBMS-talen die belangrijk zijn voor de goede werking van de database:
+\begin{itemize}
+\item De \textbf{data definition language} (DDL) wordt gebruikt om de conceptuele en interne schema's te defini\"eren.
+\item De \textbf{storage definition language} (SDL) specificieert het interne schema.
+\item De \textbf{view definition language} (VDL) bepaalt de \textit{user views} en de \textit{mappings} die ze hebben naar het conceptueel schema.
+\item De \textbf{data manipulation language} (DML) staat in voor het manipuleren van data: opvragen, toevoegen, verwijderen of aanpassen.
+\end{itemize}
+Deze zijn theoretisch omdat men in de praktijk niet werkt met aparte talen: alles wordt in \'e\'en ge\"integreerde taal gedefinieerd.
+
+Er zijn 2 soorten DMLs: \textit{high-level} en \textit{low-level}. Waar een high-level DML op zichzelf kan steunen om query's en dergelijke te processen (het wordt dan ook vaak \textit{query-taal} genoemd), moet een low-level DML ingebouwd worden in een algemene programeertaal om gebruik te kunnen maken van hun functies zoals loops. In dit laatste geval is de low-level taal een \textbf{data sublanguage} van de \textit{host language}, de programmeertaal waarin de low-level taal geschreven is.
+
+\subsection{DBMS Interfaces}
+Volgende interfaces \textit{kunnen} in de database aanwezig zijn:
+\begin{itemize}
+\item \textbf{Menu-Based Interfaces for Web Clients or Browsing.} Deze interfaces worden gebruikt om de inhoud van de database te kunnen opvragen en bekijken met behulp van drop-down menu's.
+\item \textbf{Forms-Based Interfaces.} Deze interfaces maken gebruik van invulvelden om data op te vragen of om nieuwe data toe te voegen. 
+\item \textbf{Graphical User Interfaces.} Dit type interfaces maakt gebruik van de twee voorgaande methodes om een nette interface te geven aan de gebruikers.
+\item \textbf{Natural Language Interfaces.} Hier wordt geprobeerd ingegeven woorden uit een spreektaal te vertalen zodat de zin kan ge\"interpreteerd worden. Dit heet dan \textbf{keyword-based querying}.
+\item \textbf{Speech Input and Output.} Hierbij kan men via gesproken taal een query ingeven, het resultaat wordt door de computer ook in gesproken taal gegeven.
+\item \textbf{Interfaces for Parametric Users.} Interfaces voor gebruikers die een beperkte set commando's bij herhaling nodig hebben. Door hier een specifieke set van commando's in te voeren moeten er minder toetsen worden ingedrukt.
+\item \textbf{Interfaces for the DBA.} Uiteraard moeten ook de database administrators in staat zijn de database te kunnen manipuleren. Zij hebben daar deze specifieke interfaces voor.
+\end{itemize}
+
+
+\section{The Database System Environment}
+\subsection{DBMS Component Modules}
+Elke database en zijn catalogus is opgeslagen op een schijf. Toegang tot deze schijf wordt geregeld door het besturingssysteem. Daar zit uiteraard ook \textbf{buffer management} ingebakken om \textit{disk read/write operations} te schedulen. Bovendien is er nog een \textbf{stored data manager} die de toegang tot informatie over het systeem beheert.
+\begin{itemize}
+\item Het \textbf{user}-gedeelte van de database bestaat uit de toegang voor de \textit{DBA staff}, \textit{casual users}, \textit{application programmers} en \textit{parametric users}.
+
+\item Het \textbf{query and transactie}-gedeelte staat in voor het uitvoeren van queries op de data en het teruggeven van het resultaat. Dit gebeurt in de \textbf{runtime database processor}, gebruikmakend van de \textbf{system catalog} en de \textbf{stored data manager}. Voordat de query wordt uitgevoerd is deze reeds \textit{gecompiled} en \textit{geoptimaliseerd} door de desbetreffende modules in het \textit{user}-gedeelte.
+\end{itemize}
+\textit{Zie eventueel figuur 2.3 op pagina \textbf{39}.}
+
+\subsection{Database System Utilities}
+Elke database heeft een aantal \textbf{system utilities} die helpen bij het beheer van de database:
+\begin{itemize}
+\item\textbf{Loading.} Deze utility staat in voor het inladen van bestaande \textit{data files} in een bepaald formaat (bv. tekstbestanden of sequenti\"ele bestanden) in de database.
+\item\textbf{Backup.} Deze tool maakt een gehele backup van de database om de data te kunnen herstellen bij een \textit{disk failure}. Soms werkt deze tool met \textit{incrementele backup} waarbij enkel de veranderingen sinds de laatste toestand worden opgeslagen.
+\item\textbf{Database storage reorganisation.} Een tool om een set data te reorganiseren in files of in een ander pad in de database.
+\item\textbf{Performance monitoring.} Deze utility houdt het gebruik van de database bij en maakt er statistieken van die door de administrators kunnen ge\"interpreteerd worden.
+\end{itemize}
+
+\subsection{Tools, Application Environments, and Communications Facilities}
+Er zijn nog een aantal extra tools die handig kunnen zijn, bijvoorbeeld een \textbf{information repository}. Hierin worden zaken als ontwerpsbeslissingen bijgehouden.
+
+Er is vaak ook \textbf{communication software} nodig om vanop afstand aan de database te kunnen.
+
+
+\section{Centralized \& Client/Server Architectures for DBMSs}
+\subsection{Centralized DBMSs Architecture}
+De eerste databases werden gebouwd als \textit{mainframes} met daarop aangesloten \textit{terminals}, deze terminals hadden geen eigen rekenkracht. Omdat hardware goedkoper werd, begon men de terminals te vervangen door PC's en werkstations waarbij het hele DBMS nog steeds centraal draaide.
+
+\subsection{Basic Client/Server Architectures}
+Dit type architectuur werd ontwikkeld om te kunnen werken in omgevingen met een groot aantal PC's, werkstations, printers en allerhande servers. Het idee is om verscheidene servers specifieke taken te geven in plaats van alles zomaar te centraliseren.
+
+Server-side wordt alles verdeeld over verschillende types servers (printservers, fileservers, webservers, \dots). Daarnaast is er ook de client-side, waarbij elke machine zijn gebruiker voorziet van de nodige interfaces om met deze servers te kunnen werken. 
+Al deze servers en machines zijn onderling verbonden via een communicatienetwerk.
+
+\subsection{Two-Tier Client/Server Architectures for DBMSs}
+Een \textbf{2-tier client/server architecture} is rechtstreeks gegroeid uit de gecentraliseerde architectuur. Interfaces en applicatieprogramma's werden verhuisd van server- naar client-side. De server heet in zo'n 2-tier systeem vaak de \textbf{query server} of \textbf{transaction server} omdat dit de functies van de server zijn. Client-side is er een programma dat via een API met de database kan verbinden en er query's kan op uitvoeren binnen de rechten die toegekend zijn aan de client.
+
+De softwarecomponenten zijn dus over 2 soorten systemen verdeeld zijn: clients en servers.
+
+\subsection{Three-Tier and n-Tier Architectures for Web Applications}
+Veel webapplicaties werken tegenwoordig met een \textbf{3-tier architecture}. Er wordt een extra laag ingebouwd tussen client en server: een \textbf{application server} of \textbf{web server}. Deze server draait de applicatieprogramma's en slaat procedures en constraints op waarmee men rekening mee moet houden bij het opvragen van data van de database server.
+
+Deze middle-tier geldt ook als extra veiligheidsmaatregel: je kan een client verifi\"eren voor je zijn query doorstuurt naar de databaseserver.
+
+Op de client-layer zijn dan de gebruikers- en webinterfaces aanwezig, terwijl op de server alle \textbf{data management services} aanwezig zijn.
+
+De verschillende \textit{layers} kunnen nog verder uit mekaar gehaald worden tot \textbf{n-tier architectures}, bijvoorbeeld een \textit{encryptie-/decryptieserver} om communicatie van en naar de servers te beveiligen.
+
+\section{Classification of Database Management Systems}
+Om DBMSs te classificeren zijn er een zestal criteria om te beschouwen:
+\begin{itemize}
+\item\textbf{Het gebruikte datamodel.} In veel DBMSs is dat het relationele datamodel.
+\item\textbf{Aantal ondersteunde gebruikers.} Een \textit{single-user system} ondersteunt maar \'e\'en gebruiker tegelijk, een \textit{multiuser system} meerdere.
+\item\textbf{Aantal plaatsen waarover de database verdeeld is.} Een DBMS is \textit{gecentraliseerd} als de data op \'e\'en plaats staat en \textit{gedistribueerd} als de data verspreid is over meerdere plaatsen. 
+\item\textbf{Kost.} Er zijn gratis systemen zoals MySQL en PostgreSQL maar er zijn ook betalende systemen. Veel geld gaat meestal uit naar het onderhoud van de systemen en ondersteuning als er problemen zijn. De prioriteiten liggen hier voor particulieren anders dan voor bedrijven.
+\item\textbf{Het gekozen type access path.} Men gebruikt meestal \textit{ge\"inverteerde bestandstructuren}.
+\item\textbf{Het doel.} Er zijn databases voor \textit{algemene} doeleinden en voor \textit{speciale} doeleinden.
+\end{itemize}

@@ -1,0 +1,257 @@
+\chapter[Database File Indexing Techniques, B-Trees, and B+-Trees]{Database File Indexing Techniques, B-Trees, and B$^+$-Trees}
+We gaan ervan uit dat er al een \textbf{primary access structure} bestaat zoals beschreven in het vorig hoofdstuk. In dit hoofdstuk hebben we het dan over \textbf{indexes} die \textbf{secondary access paths} voorzien om het zoeken op verschillende criteria te vergemakkelijken. In tegenstelling tot de primary access structure veranderen deze indices de fysische plaatsing van records of files \textit{niet}. De indices maken het zoeken op \textbf{indexing fields} van records gemakkelijker.
+
+
+
+\section{Types of Single-Level Ordered Indexes}
+Een index op een bestand is een gegevensstructuur die de toegang op dat bestand via een bepaald veld (het \textbf{indexing field}) effici\"enter maakt. Het laat dus toe effici\"ent te zoeken naar een bepaalde waarde van dat veld. De index is gesorteerd op dat veld waardoor binary search mogelijk wordt. 
+
+Een index kan opgeslagen zijn in het centraal geheugen of in een bestand in het externe geheugen.
+
+
+\subsection{Primary Indexes}
+Een \textbf{primary index} op een bestand is een gegevensstructuur met fixed-length records, fysisch geordend volgens het eerste veld. Er is 1 \textbf{index entry} voor elk fysisch blok in het bestand: $\text{\textless}K(i), P(i)\text{\textgreater}$. Het eerste veld bevat de \textit{ordering key} van het eerste record uit dat blok (het \textbf{anchor record}). Het tweede veld bevat een pointer naar dat blok.
+
+Een primary index is een \textbf{sparse index}: het heeft entries voor sommige zoekwaarden. Een \textbf{dense index} daarentegen heeft een entry voor elke zoekwaarde.
+
+Het opbouwen van een primary index heeft grote voordelen in het aantal \textit{block accesses} dat moet gebeuren voor een zoekopdracht. Als $\left\lceil r \,/\, \textit{bfr} \right\rceil = b$ (met $r$ het aantal records en $b$ het aantal blokken), dan zijn er voor een primary index slechts $\log_2 \left\lceil r_i \,/\, \textit{bfr}_i \right\rceil = \log_2 (b_i)$ accesses nodig (met $r_i$ het aantal entries, $\textit{bfr}_i$ de blocking factor van de index en $b_i$ het aantal blokken van de index).
+
+~
+
+\noindent Een primary index bevat kleinere en minder records dan het gegevensbestand. Het doorlopen van de index gaat dus sneller dan het doorlopen van het gegevensbestand en er is dus minder schijftoegang nodig.
+
+Het toevoegen of weglaten van gegevens is echter veel ingewikkelder: we moeten het gegevensbestand en de index aanpassen (de ankerrecords). \textbf{Overflow blocks} zijn een oplossing voor het toevoegen. Voor het weglaten van gegevens kan men de weggelaten records gewoon markeren. Na een tijdje is er toch sowieso een reorganisatie nodig.
+
+
+\subsection{Clustering Indexes}
+Als een bestand geordend is op een non-key field (dat niet voor elk record uniek is), wordt dat veld het \textbf{clustering field} genoemd en het gegevensbestand een \textbf{clustered file}. Voor zo'n bestand kunnen we een \textbf{clustering index} opstellen.
+
+Per unieke waarde van het clustering field is er 1 wijzer naar het blok waarin het eerste record met die waarde voorkomt. Deze index is ook \textbf{sparse}.
+
+Bij het toevoegen van een record, kan het gebeuren dat records fysisch 1 plaats opschuiven in de blokken, hierdoor moeten soms ook blokadressen in de index veranderd worden. Dit kan opgelost worden door aparte fysische blokken te gebruiken voor aparte waarden van het clustering field.
+
+
+\subsection{Secondary Indexes}
+Een \textbf{secondary index} is niet gebaseerd op het veld dat de ordening van het bestand bepaalt maar wel op een ander veld. De index zelf is wel geordend op dat andere veld. Voor 1 gegevensbestand kunnen er meerdere secondary indexes bestaan, telkens voor een ander veld.
+
+Er zijn meerdere technieken mogelijk, afhankelijk van de situatie.
+\begin{itemize}
+	\item Voor een veld met unieke waardes (\textbf{secondary key}), de index is gesorteerd op dat veld. De index is tevens \textbf{dense}.
+	\vspace{-2mm}
+	\begin{itemize}
+		\item Index met wijzers naar records: onmiddellijk vindbaar.
+		\item Index met wijzers naar blokken: lineair zoeken binnen het blok.
+	\end{itemize}
+	
+	\item Voor een veld met niet-unieke waardes (deze mogen onsorteerbaar zijn).
+	\vspace{-2mm}
+	\begin{itemize}
+		\item \textbf{Dense} index: elk record staat in de index, dubbele waardes zijn toegestaan in de index.
+		\item Index met variable-length records: per unieke waarde een lijst wijzers naar de blokken waarin de waarde voorkomt.
+		\item Index met per unieke waarde een wijzer naar een blok met daarin wijzers naar de records.
+	\end{itemize}
+\end{itemize}
+
+
+
+\section{Multilevel Indexes}
+Om nog minder block accesses bij elke zoekopdracht te behalen, kunnen we gebruik maken van \textbf{multilevel indexes}. Dit betekent dat we de index zelf gaan indexeren. Een index kan immers gezien worden als een geordend bestand waarop een index kan gebouwd worden. Dit kunnen we blijven herhalen tot de \textbf{top level index} nog maar 1 blok groot is.
+
+De \textbf{first level index} is de index van het geordend gegevensbestand. Dit kan elk type index zijn zolang de index enkel \textit{unieke} waardes heeft.
+
+Een \textbf{indexed sequential file} heeft een multilevel primary index op de ordering key.
+
+~
+
+\noindent De blocking factor $\textit{bfr}_i$ van de index is even groot voor alle indices en wordt ook wel de \textbf{fan-out} ($\textit{fo}$) van de multilevel index genoemd. Om te berekenen hoeveel levels er nodig zijn als we weten dat er $r_1$ entries zijn in het eerste level, bestaat de volgende formule: $t = \left\lceil \, \log_\textit{fo} (r_1) \, \right\rceil$.
+
+Bij het doorzoeken van een multilevel index gebeuren er ongeveer $\log_\textit{fo} (b_i)$ block accesses als $b_i$ het aantal blocks van de \textit{first level index} is. Dit is meestal beter dan de $\log_2 (b_i)$ block accesses die nodig zijn bij het binair zoeken in de index.
+
+~
+
+\noindent Het verwijderen van records gebeurt door ze te markeren, het toevoegen gebeurt met overloopgebieden. Zo'n overloop werkt vertragend en verkwist ruimte, er is ook af en toe een reorganisatie nodig. Bij een reorganisatie wordt het hele bestand sequentieel doorlopen en herschreven naar een nieuw bestand, daarna wordt een nieuwe index gebouwd op dat nieuwe bestand.
+
+
+
+\section[Dynamic Multilevel Indexes Using B-trees \& B+-Trees]{Dynamic Multilevel Indexes Using B-trees \& B$^+$-Trees}
+Het maken van indices met een statische structuur geeft vaak problemen bij het toevoegen of weglaten van records. Elk niveau van de indexboom is fysisch geordend, daarom moet de hele boom van indices aangepast worden als een record toegevoegd of verwijderd moet worden. Daarom bekijken we nu indices die met dynamische structuren opgebouwd worden.
+
+
+\subsection{Search Trees and B-trees}
+Een \textbf{search tree} van orde $p$ is een zoekboom met de volgende karakteristieken. Elke node in de zoekboom bevat maximaal $p-1$ zoekwaarden en $p$ pointers naar \textit{child nodes}. Elke node kan voorgesteld worden als $\text{\textless}P_1, K_1, P_2, K_2, \dots ,P_{q-1}, K_{q-1}, P_q\text{\textgreater}$ met $q \leqslant p$. Hier is $P_i$ een pointer naar een child node en $K_i$ een zoekwaarde.
+
+Op de zoekboom moeten de volgende 2 voorwaarden te allen tijde gelden.
+\begin{enumerate}
+	\item Binnen elke node geldt: $K_1 < K_2 < \dots < K_{q-1}$
+	
+	\vspace{-3mm}
+	\item Voor elke waarde $X$ waarnaar $P_i$ verwijst, geldt: $
+	\left\{
+		\begin{array}{l l}
+			K_{i-1} < X < K_i	& \quad \text{als } 1<i<q\\
+			X < K_i				& \quad \text{als }i=1\\
+			K_{i-1} < X			& \quad \text{als }i=q\\
+		\end{array}
+	\right.$
+\end{enumerate}\vspace{1mm}
+Om nu een bepaalde waarde $X$ te zoeken, volgen we recursief een reeks pointers $P_i$ volgens de tweede voorwaarde hierboven. Als $K_{r-1} < X < K_r$, moeten we dus verder zoeken via pointer $P_r$.
+
+Een zoekboom heeft echter enkele problemen als ze niet \textbf{gebalanceerd} is, in dat geval is het zoeken vaak ineffici\"ent. Door het invoegen of verwijderen van nodes kan er ook veel plaats verspild worden en zal de zoekboom nog meer ongebalanceerd worden.
+
+\textit{Zie figuren 17.8 en 17.9 op pagina \textbf{630} voor voorbeelden.}
+
+~
+
+\noindent Een oplossing voor deze problemen zijn \textbf{B-trees}. Zo'n zoekboom legt extra vereisten op aan zijn nodes zodat de B-tree veel beter gebalanceerd is.
+
+Een B-tree van orde $p$ moet voldoen aan de volgende vereisten.
+\begin{enumerate}
+	\item Interne nodes hebben $\textbf{\textless} \; P_1, \text{\textless} K_1, Pr_1 \text{\textgreater}, \; P_2, \text{\textless} K_2, Pr_2 \text{\textgreater}, \;\dots, \; P_{q-1}, \text{\textless} K_{q-1}, Pr_{q-1} \text{\textgreater}, \; P_q \; \textbf{\textgreater}$ als vorm met $q \leqslant p$. Een $P_i$ is een \textbf{tree pointer} en een $Pr_i$ is een \textbf{data pointer}.
+	
+	\item Binnen elke node geldt $K_1 < K_2 < \dots < K_{q-1}$.
+	
+	\vspace{-3mm}
+	\item Voor elke waarde $X$ waarnaar $P_i$ verwijst, geldt: $
+	\left\{
+		\begin{array}{l l}
+			K_{i-1} < X < K_i	& \quad \text{als } 1<i<q\\
+			X < K_i				& \quad \text{als }i=1\\
+			K_{i-1} < X			& \quad \text{als }i=q\\
+		\end{array}
+	\right.$
+
+	\vspace{-3mm}
+	\item Elke node heeft hoogstens $p$ tree pointers.
+	
+	\item Elke node (behalve de wortel en de bladeren) heeft minstens $\lceil p/2 \rceil$ tree pointers. De wortel heeft minstens 2 tree pointers (tenzij het de enige node is).
+	
+	\item Een node met $q$ tree pointers (met $q \leq p$) heeft $q-1$ zoekwaarden ($K_i$).
+	
+	\item Alle bladeren (\textit{leaf nodes}) staan op hetzelfde niveau.
+\end{enumerate}\vspace{1mm}
+Bij het toevoegen van een waarde in een volle node (dus $q=p$), moet deze node in 2 gesplitst worden. Bij het verwijderen van een waarde uit een node die half vol zit (dus $\lceil p/2 \rceil$), moet deze node samengevoegd worden met naburige nodes.
+
+Deze twee operaties moeten af en toe gebeuren om ervoor te zorgen dat de B-tree aan de vereisten voldoet. Ze kunnen meerdere malen na elkaar worden toegepast ze elders een nieuw probleem veroorzaken. Als een probleem zich blijft voordoen in de wortel, kan er een nieuw niveau toegevoegd of verwijderd worden.
+
+\newpage
+\noindent Bij een willekeurig aantal invoegingen en verwijderingen, zit een B-tree gemiddeld $69\%$ vol. Dit is een beperkte verspilling van geheugen, een B-tree is ook redelijk gebalanceerd. B-trees worden gebruikt als primaire bestandsorganisatie, dus van het bestand zelf en niet voor een index. Ze zijn enkel goed bruikbaar als het bestand weinig records bevat en als deze records klein zijn.
+
+Als er ge\"indexeerd wordt op een niet-sleutelveld, wijst de data pointer naar een blok met adressen zoals bij de secondary indexes. Dit zorgt dus voor een extra indirectie.
+
+Een B-tree bevat op niveau $i$ minstens $2 \, d^{i-1}$ knopen, dit zijn dus $2 \, (d-1) \, d^{i-1}$ zoekwaarden (met $d=\lceil p/2 \rceil$). Dit betekent dat de hoogte $h$ van een B-tree bepaald wordt door $h \leqslant \log_d \frac{n+1}{2}$.
+
+
+\subsection[B+-trees]{B$^+$-Trees}
+\textbf{B$^+$-trees} zijn een variatie van B-trees. Bij het doorlopen van een B-tree worden interne knopen vaak opnieuw gelezen, terwijl ze in het centraal geheugen staan. Bij B$^+$-trees wordt dit opgelost door de interne knopen enkel sleutels te laten bijhouden, geen wijzers naar records.
+
+De adressen van records staan dus enkel in de bladeren (\textit{leaf nodes}). De orde $p_i$ van de interne knopen is hierdoor groter, dit zorgt voor betere prestaties. De orde van de bladeren kan hoger zijn dan die van de interne knopen.
+
+Voor de interne knopen gelden bijna dezelfde vereisten als bij de B-tree, enkel vereisten 1 en 3 zijn lichtjes anders. Vereiste 7 geldt hier uiteraard niet.
+\begin{enumerate}
+	\item Elke interne knoop is van de vorm $\text{\textless} P_1, K_1, P_2, K_2, \dots, P_{q-1}, K_{q-1}, P_q \text{\textgreater}$ met $q \leqslant p$.
+
+	\setcounter{enumi}{2}
+	\vspace{-1mm}
+	\item Voor elke waarde $X$ waarnaar $P_i$ verwijst, geldt: $
+	\left\{
+		\begin{array}{l l}
+			K_{i-1} < X \leqslant K_i	& \quad \text{als } 1<i<q\\
+			X \leqslant K_i				& \quad \text{als }i=1\\
+			K_{i-1} < X					& \quad \text{als }i=q\\
+		\end{array}
+	\right.$
+\end{enumerate}\vspace{1mm}
+Voor de bladeren stellen we de volgende vereisten.
+\begin{enumerate}
+	\item Elk blad is van de vorm $\textbf{\textless} \; \text{\textless} K_1, Pr_1 \text{\textgreater}, \; \text{\textless} K_2, Pr_2 \text{\textgreater}, \;\dots, \; \text{\textless} K_{q-1}, Pr_{q-1} \text{\textgreater}, \; P_\textit{next} \; \textbf{\textgreater}$ met $q \leqslant p$. $P_\textit{next}$ verwijst naar het volgende blad in de B$^+$-tree. Hierdoor kan je de bladeren makkelijk in volgorde doorlopen als een linked list.
+
+	\item Binnen elke node geldt $K_1 \leqslant K_2 \leqslant \dots \leqslant K_{q-1}$.
+	
+	\item Elke data pointer $Pr_i$ wijst naar een record (wiens zoekwaarde gelijk is aan $K_i$) of naar een blok met daarin het record. Als het zoekveld geen sleutelveld is, kan $Pr_i$ ook wijzen naar een blok met adressen zoals bij de secondary indexes.
+	
+	\item Elk blad heeft minstens $\lceil p/2 \rceil$ waarden.
+	\item Alle bladeren staan op hetzelfde niveau.
+\end{enumerate}\vspace{1mm}
+Om een record met sleutel $K$ toe te voegen aan een B$^+$-tree, voeg je de sleutel toe aan het blad waarbij de sleutel hoort. Als het blad al vol is, splits je het blad in 2 kinderen en verdeel je de elementen over deze kinderen. Je voegt de sleutel toe aan het juiste blad en past de $P_\textit{next}$ aan.
+
+Daarna voeg je de laatste waarde (sleutel) van blad 1 toe aan de ouderknoop. Als deze ouderknoop vol is, herhaal je dit proces (maar dan met interne knopen).
+
+~
+
+\noindent Om een record met sleutel $K$ te verwijderen, zoek je het blad met de sleutel en verwijder je de sleutel daaruit. Als de sleutel in de interne knopen voorkomt, vervang je hem door de waarde er net links van.
+
+Als er onderloop (te weinig waarden) in een blad is, steel je enkele waarden van een naburig blad (en pas je de ouderknoop aan). Eventueel kan je ook 2 bladeren samenvoegen. Als er onderloop in een interne knoop is, kan je de waarden herverdelen of interne knopen samenvoegen.
+
+\newpage
+\noindent Er bestaan ook B$^*$-trees, het enige verschil met een B$^+$-tree is dat een knoop niet minstens halfvol moet zijn maar minstens $\frac{2}{3}$ vol. Er wordt dan pas gesplitst als 2 naburige knopen vol zijn.
+
+Bij andere systemen wordt met een \textbf{fill factor} gewerkt die tussen $0.5$ en $1.0$ ligt. Nog andere systemen laten toe dat een interne knoop leeg kan worden of hebben een andere beperking voor interne knopen en bladknopen.
+
+
+
+\section{Indexes on Multiple Keys}
+We proberen nu op 2 velden ($v_1$ en $v_2$) tegelijk te selecteren met condities $c_1$ en $c_2$. Eerst geven we 2 na\"ieve oplossingen waarna we betere oplossingen gaan overlopen.
+\begin{itemize}
+	\item Als er een index op $v_1$ bestaat, selecteer daaruit de elementen die voldoen aan $c_1$. Uit die set van kandidaten neem je dan enkel de records die voldoen aan $c_2$. Dit werkt uiteraard ook in de andere richting (als er een index op $v_2$ bestaat).
+	\item Als er indices bestaan voor $v_1$ en voor $v_2$, maak dan 2 sets die voldoen aan de condities $c_1$ en $c_2$. De oplossing wordt dan bepaald door de gemeenschappelijke records uit die 2 sets.
+\end{itemize}
+
+
+\subsection{Ordered Index on Multiple Attributes}
+Als we vaak zoeken naar een combinatie van $v_1$ en $v_2$, kan men een index maken die als key een tupel $\text{\textless} v_1, v_2 \text{\textgreater}$ heeft. Hierbij wordt dan eerst op $v_1$ en dan op $v_2$ gesorteerd (in de tupel). 
+
+
+\subsection{Partitioned Hashing}
+Als er geen range queries nodig zijn (als we dus enkel op gelijkheid checken), is \textbf{partitioned hashing} een goede kandidaat. Hierbij wordt elk attribuut apart gehasht waarna de resultaten van de hashfuncties samengevoegd worden: $h(c_1)h(c_2)$. De samengevoegde hash wijst dan naar de bucket met records die aan beide voorwaarden voldoen.
+
+Deze techniek kan ook met meerdere attributen toegepast worden.
+
+Een extra voordeel is dat het ook redelijk gemakkelijk is om op 1 attribuut te selecteren (in dit voorbeeld het eerste attribuut). Je moet dan namelijk alle buckets afgaan die beginnen met de hash van de eerste conditie: $h(c_1)h(*)$.
+
+
+\subsection{Grid Files}
+\textbf{Grid files} zetten de twee attributen uit in een matrix. Per rij wordt er een specifiek interval van $v_1$ bepaald en per kolom ook een specifiek interval van $v_2$. Daarna zetten we wijzers naar buckets op de juiste plaatsen in de matrix. Een wijzer wijst naar een bucket waarin alle records zitten die behoren tot het interval van die rij (voor $v_1$) en behoren tot het interval in die kolom (voor $v_2$).
+
+
+
+\section{Other Types of Indexes}
+\subsection{Hash Indexes}
+Zoals besproken in het vorige hoofdstuk, kunnen we ook \textbf{hash indexes} gebruiken als \textit{secundary access structure}. Dit werkt analoog aan de besprekingen hierboven, met als enige uitzondering dat er een ander veld gekozen wordt als indexveld.
+
+
+\subsection{Bitmap Indexes}
+Een \textbf{bitmap index} maken gaat als volgt. Per mogelijke waarde van het attribuut maken we een entry in de bitmap index en overlopen dan alle records in volgorde. Als bij een record de waarde voor het attribuut gelijk is aan de waarde bij de entry, schrijven we een 1 bij die entry, in het andere geval een 0. Zo krijgt men per mogelijke waarde (entry) een opeenvolging van bits die voor elk record zeggen of dat record die waarde bevat.
+
+Deze techniek is enkel effici\"ent als er v\'e\'el meer records dan mogelijke waarden bestaan. Het verwijderen van een record zorgt voor overhead maar die kan beperkt worden door een \textbf{existence bitmap} te maken die bijhoud of een record nog bestaat.
+
+~
+
+\noindent Op dezelfde manier kan voor de bladeren van een B$^+$-tree ook een bitmap worden gemaakt. Als bepaalde zoekwaarden heel vaak voorkomen is de lijst met records bij die waarde zeer lang. Daarom kan het dan dus handig zijn om bij zo'n zoekwaarde een bitmap op te slaan die weergeeft of records bij die waarde horen.
+
+
+\subsection{Function-Based Indexing}
+In plaats van een index te maken van waarden van een attributen, passen we een functie toe op die attributen en maken een index op basis van die functiewaarden.
+
+
+
+\section{Some General Issues Concerning Indexing}
+\subsection{Logical versus Physical Indexes}
+Een \textbf{physical index} bevat bij elke verwijzing naar een record het fysische adres van dat record op de schijf. Dit heeft als nadeel dat als het record wordt verplaatst, men de index moet aanpassen.
+
+Om dit op te lossen wordt er vaak gebruik gemaakt van een \textbf{logical ndex}. Voor elke fysische plaats van een record, is er in deze index een entry die een zekere code als index key heeft. In de rest van het systeem wordt dan met de key van de logical index verwezen naar de records. 
+
+
+\subsection{Discussion}
+Vaak worden indices dynamisch aangemaakt (dus als het nodig is), daarom wordt een index vaak een \textit{access structure} genoemd.
+
+Met indices kan men ook key constraints op een attribuut controleren. Als er een nieuw record wordt toegevoegd, dan wordt er meteen ook gecheckt of deze constraint geldt en kan het invoegen worden verworpen.
+
+Duplicaten kunnen voor problemen zorgen in een DBMS daarom wordt er soms aan de primaire sleutel ook het rijnummer van het record toegevoegd. Op die manier is elk record uniek te identificeren en kunnen duplicaten bovendien makkelijk worden afgehandeld.
+
+Een \textbf{fully inverted file} is een bestand dat op elk attribuut van de records is ge\"indexeerd.
+
+\textbf{Virtual Storage Access Method (VSAM)} is nog een systeem van IBM dat tegenwoordig in veel commerci\"ele systemen terug te vinden is.
+
+
+\subsection{Column-Based Storage of Relations}
+Een ander systeem voor een DBMS is \textbf{column-based storage}. Voor sommige toepassingen is dit veel effici\"enter dan \textit{row-based}, meestal gebruiken deze toepassingen vooral \textit{read-only} operaties. Men kan dan beter indexeren op enkel de nodige informatie (dus met column-based storage).

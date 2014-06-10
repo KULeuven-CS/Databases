@@ -1,0 +1,557 @@
+\chapter{Introduction to Protocols for Concurrency Control in Databases}% .75
+\section{Two-Phase Locking Techniques for Concurrency Control}% .25
+Een \textbf{lock} is een variabele geassocieerd met een data-item dat de status weergeeft wat betreft de mogelijke operaties die erop kunnen worden uitgevoerd.
+\begin{itemize}
+	\item \'E\'en lock per data-item in de database
+	\item Gebruikt voor synchronisatie bij gelijktijdige toegang
+\end{itemize}
+
+
+\subsection{Types of Locks and System Lock Tables}% 3.25
+Hieronder worden enkele soorten \textbf{locks} besproken.
+
+\subsubsection{Binary Locks}
+\paragraph{Status}
+Variabele heeft slechts twee toestanden voor data-item \textbf{X}:
+\begin{itemize}
+	\item \textbf{Locked (1)}: variabele heeft waarde 1 en \textbf{X} is niet toegankelijk
+	\item \textbf{Unlocked (0)}: variabele heeft waarde 0 en \textbf{X} is toegankelijk. Indien het item wordt gebruik wordt de waarde op 1 (Locked) gezet.
+\end{itemize}
+We refereren vanaf nu naar de status van \textbf{lock} geassocieerd met \textbf{X} als de booleaanse waarde \textbf{lock(X)}
+
+\paragraph{Operaties} Er zijn twee operaties gedefinieerd:
+\begin{itemize}
+	\item \textbf{lock\_item(X)}\\  Idien een transactie \textbf{X} wil benaderen wordt deze operatie uitgevoerd. Er zijn twee mogelijkheden:
+	\begin{itemize}
+		\item \textbf{lock(x) = 1}: De transactie moet wachten.
+		\item \textbf{lock(x) = 0}: De waarde van \textit{lock(x)} wordt op 1 gezet en de transactie kan worden uitgevoerd.
+	\end{itemize}
+	
+	\item \textbf{unlock\_item(X)}\\  Wanneer de transactie voltooid is wordt \textbf{X} terug vrijgegeven. De waarde van \textit{lock(x)} wordt terug op 0 gezet.
+\end{itemize}
+(Exact algoritme zie pagina 757)
+
+\paragraph{Critische secties} Bovenstaande operaties moeten ondeelbaar of atomair worden uitgevoerd. Dergelijke stukken code worden \textbf{critische secties} genoemd.
+
+\paragraph{Gegevensstructuur} Voor de implementatie van een \textbf{binary lock} volstaan twee gegevensstructuren:
+\begin{itemize}
+	\item Een queue waarin transacties worden geplaatst die wachten om de lock te bemachtigen.
+	\item  Een gegevensstructuur met 3 velden: $Data\_item\_name, LOCK, Locking\_transaction>$. \\Dit zou bijvoorbeeld ook een hash-tabel kunnen zijn waarbij er wordt vanuit gegaan dat items die niet in de tabel zitten niet gelock zijt.
+\end{itemize}
+
+\paragraph{Regels bij Binary Lock}
+\begin{enumerate}
+	\item Een transactie moet een operatie \textit{lock\_item(X)} uitvoeren alvorens een operatie \textit{read\_item(X)} of \textit{write\_item(X)} uit te voeren.
+	\item Een transactie moet een operatie \textit{unlock\_item(x)} uitvoeren nadat alle \textit{read\_item(X)} of \textit{write\_item(X)} operaties zijn afgerond.
+	\item Een transactie mag geen operatie \textit{lock\_item(X)} uitvoeren wanneer hij de lock reeds bezit.
+	\item Een transactie mag geen operatie \textit{unlock\_item(X)} uitvoeren wanneer hij de lock niet bezit.
+\end{enumerate}
+
+\paragraph{Conclusie}
+\begin{itemize}
+	\item Zeer eenvoudig
+	\item Slechts 1 transactie kan een lock vasthouden
+\end{itemize}
+
+ 
+\subsubsection{Shared/Exclusive (or Read/Write) Locks}
+Bepaalde operaties kunnen gelijktijdig worden uitgevoerd op \textbf{X}. Daarvoor zijn er nu 3 operaties met bijhorende status:
+\begin{itemize}
+	\item \textbf{read\_lock(X) $\rightarrow$ read-locked} \\ Deze lock kan door meerdere transacties tegelijk worden verkregen.
+	\item \textbf{write\_lock(X) $\rightarrow$ write-locked} \\ Deze lock kan exclusief aan \'e\'en transactie worden toegewezen.
+	\item \textbf{unlock(X) $\rightarrow$ unlocked} \\ Geef X terug vrij.
+\end{itemize}
+Deze locks worden ook \textbf{multiple-mode locks} genoemd.
+
+\paragraph{Gegevensstructuur}
+We moeten nu bijhouden hoeveel transacties in het bezit zijn van een \textbf{read lock}.
+\[<Data\_item\_name, LOCK, No\_of\_reads, Locking\_transaction(s)>\]
+Afhankelijk van het type bevat de lijst met transacties slechts \'e\'en element bij een \textbf{write lock} of meerdere bij een \textbf{read lock}.
+
+\paragraph{Regels Read/Write Locks}
+\begin{enumerate}
+	\item Een transactie moet een operatie \textit{read\_lock(X)} of \textit{write\_lock(X)} uitvoeren alvorens een operatie \textit{read\_item(X)} uit te voeren.
+	\item Een transactie moet een operatie \textit{write\_lock(X)} uitvoeren alvorens een operatie \textit{write\_item(X)} uit te voeren.
+	\item Een transactie moet een operatie \textit{unlock\_item(x)} uitvoeren nadat alle \textit{read\_item(X)} of \textit{write\_item(X)} operaties zijn afgerond.
+	\item Een transactie mag geen operatie \textit{write\_lock(X)} uitvoeren wanneer deze al een read lock of write lock bezit. (Dit kan worden versoepeld)
+	\item Een transactie mag geen operatie \textit{unlock\_item(X)} uitvoeren wanneer hij de lock niet bezit.
+\end{enumerate}
+
+\subsubsection{Conversion of Locks}
+We kunnen regel 4 en 5 versoepelen om \textbf{lock conversion} toe te laten. Hierdoor kan de transactie zijn lock
+\begin{itemize}
+	\item \textbf{Upgraden:} Wanneer deze een read lock bezit kan hij deze \textit{upgraden} tot een write lock.
+	\item \textbf{Downgraden:} Wanneer deze een write lock bezit kan hij deze \textit{downgraden} tot een read lock.
+\end{itemize}
+
+\subsubsection{Serializability}
+\begin{enumerate}
+	\item Werkwijze garandeert geen \textbf{serializability}
+	\item Protocol nodig dat bepaalt wanneer we locken en unlocken
+\end{enumerate}
+(zie voorbeeld pagina 761)
+
+
+\subsection{Guaranteeing Serializability by Two-Phase Locking}% 2
+Om te voldoen aan het \textbf{two-phase locking protocol} moeten alle locks voorafgaan aan de \textit{eerste} unlock-operatie. Hiermee kan een transactie worden opgedeeld in twee fases:
+\begin{enumerate}
+	\item \textbf{Expanding / Growing Phase} \\ Locks kunnen worden bemachtigd maar niet worden vrijgegeven. Bij lock conversion mag worden geupgrade.
+	\item \textbf{Shrinking Phase} \\ Locks kunnen worden vrijgegeven maar niet worden bemachtigd. Bij lock conversion mag worden gedowngrade.
+\end{enumerate}
+
+\begin{center}
+\textbf{Indien elke transactie het two-phase locking protocol volgt is de planning gegarandeerd serializable.}
+\end{center}
+
+\paragraph{Eigenschappen}
+\begin{itemize}
+	\item Limiteert de hoeveelheid parallelisme
+	\item Garandeert serializability
+	\item Mogelijk zijn er andere schema's die ook voldoen, maar niet worden toegelaten met dit principe
+\end{itemize}
+
+\subsubsection{Basic, Conservative, Strict, and Rigorous Two-Phase Locking}
+Verschillende varianten op \textbf{Two-Phase Locking}
+\begin{itemize}
+	\item \textbf{Basic} \\
+	Beschreven in vorige paragraaf
+	\item \textbf{Conservative of static}
+	\begin{itemize}
+		\item Vereist dat alles gelockt is alvorent de transactie van start gaat
+		\item \textbf{Predeclareren} van een \textbf{write-set} en \textbf{read-set}
+		\item Geeft nooit aanleiding tot \textbf{deadlock}
+		\item Soms onmogelijk
+		\end{itemize}
+	\item \textbf{Strict}
+		\begin{itemize}
+		\item Meest populair
+		\item Garandeert stricte schema's
+		\item Vrijgeven van exclusieve locks gebeurt pas helemaal op het einde
+		\end{itemize}
+	\item \textbf{Regorous}
+		\begin{itemize}
+		\item Nog stricter
+		\item Garandeert eveneens stricte schema's 
+		\item Vrijgeven van \textit{elke} lock gebeurt pas helemaal op het einde
+		\item Eenvoudiger te implementeren dan \textbf{strict}
+		\end{itemize}	
+\end{itemize}
+
+\subsubsection{Concurrency Control Subsystem}
+\begin{itemize}
+	\item Verantwoordelijk voor toekennen locks
+	\item Houdt gegevensstructuren bij
+\end{itemize}
+
+
+\subsection{Dealing with Deadlock and Starvation}% 2.75
+Twee mogelijke problemen die voorkomen bij het gebruik van locks.
+
+\subsubsection{Deadlock}
+Treedt op wanneer elke transactie $T$ in een set van minstens twee transacties wacht op een item dat locked is door een andere transactie $T'$
+\begin{itemize}
+	\item Elke transactie in de wachtrij
+	\item Lock kan nooit worden vrijgegeven
+\end{itemize}
+
+\subsubsection{Deadlock Prevention Protocols}
+Protocols voor het verhinderen van deadlocks.
+\begin{itemize}
+	\item \textbf{Lock in advance} \\ Zoals gebruikt bij conservative locking
+	\item \textbf{Ordering} \\ Bepaal een soort van ordening zodat transacties die meerdere items nodig hebben ze in de juiste volgorde locken.
+\end{itemize}
+\paragraph{Timestamp Methodes} Alternatieve methodes maken gebruik van een Transaction Timestamp, genoteerd als $TS(T)$. \
+\begin{itemize}
+	\item Kent uniek ID toe aan elke transactie
+	\item Gebaseerd op orde van transactie
+	\item $TS(T_1) < TS(T_2) \Rightarrow T_1$ startte voor $T_2$
+\end{itemize}
+Hiermee kunnen volgende regels worden ingesteld ter preventie van deadlocks.
+\begin{itemize}
+	\item \textbf{Wait-die} \\ Als $TS(T_i) < TS(T_j)$ dan mag $T_i$ wachten. Indien $TS(T_i) > TS(T_j)$ wordt $T_i$ onderbroken en later herstart met \underline{zelfde timestamp}.
+	\item \textbf{Wound-wait} \\ Als $TS(T_i) < TS(T_j)$ dan wordt $T_j$ onderbroken en later herstart met \underline{zelfde timestamp}. Indien $TS(T_i) > TS(T_j)$ mag $T_i$ wachten.
+\end{itemize}
+Met deze protocols worden geen circulaire wachtrijen gevormd en zijn deadlocks niet mogelijk.
+\paragraph{Wait Methods}
+\begin{itemize}
+	\item \textbf{No Waiting}
+	\begin{itemize}
+		\item Transactie wordt onmiddellijk onderbroken als geen lock kan worden bemachtigd
+		\item Geen controle op daadwerkelijke deadlock
+		\item Herstart na zekere periode
+	\end{itemize}
+	\item \textbf{Cautious Waiting}
+	\begin{itemize}
+		\item $T_i$ wilt lock voor \textbf{X} maar deze is in het bezit van $T_j$
+		\item Als $T_j$ op dat moment zelf ook wacht wordt $T_i$ onderbroken
+	\end{itemize}	
+\end{itemize}
+Beide methodes garanderen dat er geen deadlocks optreden.
+
+\subsubsection{Deadlock Detection}
+Protocols voor het opmerken van deadlocks.
+\begin{itemize}
+	\item Interessant indien kans op deadlocks klein is
+	\item Minder interessant indien hoge intensiteit transacties
+\end{itemize}
+\paragraph{Wait-for graph}
+\begin{itemize}
+	\item Knoop voor elke transactie die aan het uitvoeren is
+	\item Gerichte boog van wachtende transactie naar transactie die lock momenteel heeft
+	\item Boog wordt verwijderd indien lock wordt vrijgegeven door eindpunt
+\end{itemize}
+In geval van deadlock $\rightarrow$ \textbf{vinctim selection}
+
+\subsubsection{Timeouts} 
+\begin{itemize}
+	\item Transactie gelimiteerd in tijd
+	\item Eenvoudig te implementeren
+	\item Weinig overhead
+\end{itemize}
+
+\subsubsection{Starvation}
+\begin{itemize}
+	\item Transactie moet wachten voor onbepaalde duur terwijl andere wel kunnen uitvoeren
+	\item Treedt op bij prioriteiten (bv ter preventie van deadlocks)
+	\item Treedt op wanneer steeds hetzelfde victim wordt gekozen.
+\end{itemize}
+Hoe oplossen?
+\begin{itemize}
+	\item Eerlijk wachtschema ($\rightarrow$ Firs-come-first-served)
+	\item Prioriteit verhogen met wachtduur
+\end{itemize}
+Wait-Die en Wound-Wait kunnen geen aanleiding geven tot starvation gezien de transactie herstart wordt met de originele timestamp.
+
+
+
+\section{Concurrency Control Based on Timestamp Ordering}% .25
+Alternatief dat eveneens \textbf{serializability} garandeert.
+
+
+\subsection{Timestamps}% .5
+\begin{itemize}
+	\item Unieke identifier, toegekend bij begin van transactie
+	\item Kan gezien worden als de \textbf{starttijd} van de transactie
+	\item Ordening op basis van \textbf{timestamps} voorkomt deadlocks
+\end{itemize}
+Implementatie van een timestamp
+\begin{itemize}
+	\item Teller die wordt verhoogd bij aanmaak nieuwe timestamp \\
+	(Waarde kan niet oneindig toenemen!)
+	\item Huidige tijd waarbij slechts 1 timestamp gegenereeerd kan worden tijdens 1 klik van de klok
+\end{itemize}
+
+
+\subsection{The Timestamp Ordering Algorithm}% 2
+Centraal idee: \textbf{Sorteren transacties op hun timestamp}
+Verschil met 2PL
+\begin{itemize}
+	\item Schema is equivalent met \textit{een} schema dat voldoet aan 2PL protocol
+	\item Schema is equivalent met schema met \textbf{dezelfde volgorde} van transacties 
+\end{itemize}
+Het algoritme garandeert dat voor elk item dat wordt benaderd door conflicterende operaties de volgorde van benadering gelijk is als die van de timestamps.
+Met elk item worden twee Timestamp-waarden geassocieerd:
+\begin{itemize}
+	\item \textbf{Read Timestamp:} read\_TS(X) \\
+	read\_TS(X) $\leftarrow$ TS(T) waarbij T de \textbf{jongste transactie} is die X heeft gelezen.
+	
+	\item \textbf{Write Timestamp:} write\_TS(X) \\
+	write\_TS(X) $\leftarrow$ TS(T) waarbij T de \textbf{jongste transactie} is die X heeft weggeschreven.
+\end{itemize}
+
+\subsubsection{Basic Timestamp Ordering (TO)}
+\begin{itemize}
+	\item 
+Transactie T probeert een operatie \textbf{write\_item(X)} uit te voeren. 	Algoritme controleert of de timestamp van T kleiner is dan die van X: 
+	\textbf{Boolean b $\leftarrow$ write\_TS(X) $>$ TS(T) $\vee$ read\_TS(X) $>$ TS(X)} \
+	\begin{itemize}
+		\item \textbf{If(b=TRUE)}: Jongere operatie (met grote TS(T')$>$TS(T)) heeft waarde reeds veranderd $\rightarrow$ stop de transactie, herstel eventueel gewijzigde items (\textbf{roll back}) en weiger de operatie. 
+		\item \textbf{If(b=FALSE)}: Geen probleem $\rightarrow$ voer de operatie uit en zet \ write\_TS(X) op TS(T)
+	\end{itemize}
+	
+	\item 
+Transactie T probeert een operatie \textbf{read\_item(X)} uit te voeren. 	Algoritme controleert of de timestamp van T kleiner is dan die van X: 
+	\textbf{Boolean b $\leftarrow$ write\_TS(X) $>$ TS(T)} \
+	\begin{itemize}
+		\item \textbf{If(b=TRUE)}: Jongere operatie (met grote TS(T')$>$TS(T)) heeft waarde reeds veranderd $\rightarrow$ stop de transactie, herstel eventueel gewijzigde items (\textbf{roll back}) en weiger de operatie. 
+		\item \textbf{If(b=FALSE)}: Geen probleem $\rightarrow$ voer de operatie uit en zet \ read\_TS(X) op $max(TS(T),read\_TS(T))$
+	\end{itemize}
+\end{itemize}
+\textbf{Samengevat:} Wanneer twee conflicterende operaties in verkeerde volgorde worden uitgevoerd, wordt de laatste van de twee geweigerd door het be\"eindigen van bijhorende transactie .
+
+\subsubsection{Strict Timestamp Method}
+Variant op Basic TO Algoritme die ganradeert dat de schema's ook \textbf{strict} en \textbf{conflict serializable} zijn.
+\\\\
+\textbf{Idee:} Transactie T die operatie uitvoert zodat TS(T) $>$ write\_TS(X) \textbf{moet wachten} todat transactie T' dat de huidige waarde van X schreef (write\_TS(X) = TS(T')) voltooid en be\"eindigd is.\\\\
+$\rightarrow$ Geen aanleiding tot deadlock: kan niet circulair worden gewacht door ordering in timestamp.
+
+\subsubsection{Thomas's Write Rule}
+Variant op Basic TO Algoritme die \textbf{geen conflic serializabilty} garandeert maar minder schrijfoperaties weigert.
+\begin{itemize}
+	\item \textbf{If(read\_TS(X) $>$ TS(T))}: Stop en herstel (roll back)
+	\item \textbf{Else If(write\_TS(X) $>$ TS(T))}: Voer schrijfoperatie \textbf{niet} uit maar blijf uitvoeren. De huidige schrijfoperatie van T is reeds verouderd.
+	\item \textbf{Else}: voer de schrijfoperatie uit en zet write\_TS(X) op TS(T).
+\end{itemize}
+
+
+
+\section{Multiversion Concurrency Control Techniques}% .5
+Hierbij worden oudere versies van de data bijgehouden wanneer de waarde van een item wordt gewijzigd. 
+\begin{itemize}
+	\item Leesoperaties die anders geweigerd zouden worden toch nog een oudere versie lezen.
+	\item Door het kiezen van de juiste versie blijft \textbf{serializabilty} gegarandeerd
+	\item Vraagt meer ruimte (maar kan soms sowieso het geval zijn voor herstel)
+\end{itemize}
+
+
+\subsection{Multiversion Technique Based on Timestamp Ordering}% .75
+Opnieuw twee timestmaps
+\begin{itemize}
+	\item \textbf{read\_TS($X_i$)}: grootste timestamp (= jongste) van alle transacties die $X_i$ hebben gelezen.
+	\item \textbf{write\_TS($X_i$)}: grootste timestamp (= jongste) van alle transacties die $X_i$ hebben weggeschreven.
+\end{itemize}
+Dit leidt tot 
+\begin{itemize}
+	\item T mag item $X$ \textbf{schrijven} $\rightarrow$ Versie $X_{k+1}$ van X wordt aangemaakt en read\_TS($X_{k+1}$) en write \_TS($X_{k+1}$) worden op TS(T) gezet.
+	\item T mag item $X_i$ \textbf{lezen} $\rightarrow$ read\_TS($X_{i}$) en write \_TS($X_{i}$) worden op TS(T) gezet.
+\end{itemize}
+\paragraph{Regels} Regels om \textbf{serializability te garanderen:}
+\begin{enumerate}
+	\item Als transactie T een write\_(X) operatie wil uitvoeren en versie $i$ van X heeft de hoogste write\_TS($X_i$) waarde van alle versies van $X$	 die kleiner of gelijk is aan TS(T) en read\_TS($X_i$) $>$ TS(T)\\ 
+	$\rightarrow$ Be\"eindig en herstel transactie T \\
+	(Deze situatie komt voor als T een versie van X probeert te schrijven die gelezen zou moeten zijn door een transactie T' met timestamp read\_TS(T'))
+	\\ Anders: Vorm een nieuwe versie $X_j$ van X met read\_TS($X_j$) = write\_TS($X_j$) = TS(T)
+
+	\item Als transactie T een read\_(X) operatie wil uitvoeren, vind versie i van X met de hoogste write\_TS($X_i$) van alle X die kleiner zijn van TS(X) \\
+	$\rightarrow$ Geef de waarde van $X_i$ terug aan transactie T en zet de waarde van read\_TS($X_i$ op $max(TS(T),read_TS(X_i))$
+\end{enumerate}
+$\rightarrow$ Lezen is \textbf{altijd} succesvol. \\
+$\rightarrow$ Herstellen kan aanleiding geven tot \textbf{cascading rollback}
+
+
+\subsection{Multiversion Two-Phase Locking Using Certify Locks}% .75
+Drie soorten locking
+\begin{itemize}
+	\item \textbf{Read}:  Onveranderd
+	\item \textbf{Write}: Twee versies $\rightarrow$ een transactie T' mag X lezen terwijl T hierop een writ lock bezit.  
+	\begin{itemize}
+		\item \'E\'en versie weggeschreven door voltooide transactie
+		\item Andere versie aangemaakt bij verkrijgen write lock voor T
+	\end{itemize}
+	\item \textbf{\textit{Certify}}: Exclusief en nodig voor het voltooien van transactie $\rightarrow$ nodig voor elk object waarop write lock is verkregen
+\end{itemize}
+\paragraph{Eigenschappen}
+\begin{itemize}
+	\item Lezen kan gelijktijdig met enkelvoudig write lock
+	\item Voltooien transactie kan uitgesteld worden door wachten op certify lock
+	\item Deadlocks kunnen voorkomen bij het upgraden van read naar write lock
+\end{itemize}
+
+
+
+\section{Validation (Optimistic) Concurrency Control Techniques}% 1.5
+Voorgaande technieken checken \textbf{voor} de uitvoer van de operaties $\rightarrow$ overhead en vertraging.
+\\\\
+\textbf{Validation} of \textbf{Certification} doet geen controle  tijdens de uitvoer van de transactie.
+
+\paragraph{Protocolfasen}
+\begin{enumerate}
+	\item \textbf{Read Phase}: Een transactie kan waarden lezen van gecommiteeerde items in de database. Updates worden enkel toegewezen aan lokale kopie\"en.
+	\item \textbf{Validation Phase}: Controle wordt uitgevoerd om te verzekeren dat geen updates de \textbf{serializability} schenden.
+	\item \textbf{Write Phase:} Als de validatie succesvol was worden de updates weggeschreven naar de database.
+\end{enumerate}
+
+\paragraph{Centraal idee}
+\begin{itemize}
+	\item Controle in \'e\'en keer op het einde
+	\item Uitvoer met een minimum aan overhead tot de validatie wordt bereikt	
+\end{itemize}
+
+\paragraph{Optimistisch}
+\begin{itemize}
+	\item Als er veel interferentie is zullen vele transacties moeten herstarten na validatiefase
+	\item Optimischtisch veronderstelt weinig interferentie
+\end{itemize}
+
+\subsubsection{Protocol}
+Maakt gebruik van \textbf{transaction timestamps} en moet daarnaast bijhouden:
+\begin{itemize}
+	\item write\_sets en read\_sets (= alle items die respectievelijk geschreven en gelezen worden)
+	\item Begin- en eindtijden van fases
+\end{itemize}
+$\rightarrow$ Bij de validatiefase voor $T_i$ wordt nagegaan of deze niet interfereert met gecommiteerde transacties of transacties momenteel ook in de validatiefase zitten.W
+\paragraph{Protocol regels}
+Tijdens de validatie wordt gecontroleerd of, voor elke transactie $T_j$ dat deze ofwel gecommitteerd is ofwel in zijn validatiefase is geldt:
+\begin{enumerate}
+	\item Transactie $T_j$ voltooid zijn schrijffase voordat $T_i$ zijn leesfase begint.
+	\item $T_i$ start zijn leesfase na de schrijffase van $T_j$ en de read\_set van $T_i$ heeft geen elementen gemeenschappelijk met de write\_set van $T_j$
+	\item Zowel de read\_set als de write\_set van $T_i$ hebben geen elementen gemeenschappelijk met de write\_set van $T_j$ en $T_j$ voltooit zijn leesfase $T_i$ zijn leesfase voltooit.
+\end{enumerate}
+
+
+
+\section{Granularity of Data Items and Multiple Granularity Locking}% .25
+We gingen er steeds van uit dat de database gevormd werd door een aantal \textbf{data-items}, bijvoorbeeld:
+\begin{itemize}
+	\item Een record
+	\item Een veld van een record
+	\item Een disk block
+	\item Volledig bestand
+	\item De volledig database
+\end{itemize}
+De \textbf{granularity} of \textbf{granulariteit} bepaalt de performatie van bovenvermelde technieken.
+
+
+\subsection{Granularity Level Considerations for Locking}% .75
+\textbf{Data item granularity}
+\begin{itemize}
+	\item \textbf{Fijne granulariteit}: kleine items
+	\item \textbf{Grove granulariteit}: grote items 
+\end{itemize}
+\paragraph{Voor- en nadelen}
+\begin{itemize}
+	\item \textbf{Grove granulariteit}
+	\begin{itemize}
+		\item Minder parallellisme
+		\item Lange wachttijden
+	\end{itemize}
+	\item \textbf{Fijne granulariteit}
+	\begin{itemize}
+		\item Groter aantal \textit{items} in de database
+		\item Meer overhead
+	\end{itemize}
+\end{itemize}
+$\rightarrow$ Beste grootte hangt af van situatie
+
+
+\subsection{Multiple Granularity Level Locking}% 1.75
+Ondersteunen van locks voor verschillende groottes van items $\rightarrow$ \textbf{multiple granularity level 2PL}\\
+(Probleem: voorbeeld probleem zie pagina 775) \\
+Nieuw type lock nodig: \textbf{intention lock} $\rightarrow$ toont pad vanaf root tot gewenste knoop in granulariteitshierarchie.
+\begin{enumerate}
+	\item \textbf{Itention-shared (IS)}: \'e\'en of meer gedeelde locks op onderliggende kno(o)p(en).
+	\item \textbf{Intention-exclusive (IX)} \'e\'en of meer exclusieve locks op onderliggende kno(o)p(en).
+	\item \textbf{Shared-intention-exclusive (SIX)} Op huidige knoop rust een gedeeld lock maar \'e\'en of meer exclusieve locks zullen worden aangevraagd op onderliggende knopen.
+\end{enumerate}
+\paragraph{Protocol regels} \textbf{Multiple Granularity Locking (MLG)}
+\begin{enumerate}
+	\item Compatibiliteit locks moet aangehouden worden. (zie pagina 776)
+	\item De root moet altijd als eerste worden gelockt.
+	\item Een knoop $N$ kan gelockt zijn door transactie $T$ in $S$ of in $IS$ mode als en slechts als de vader van de knoop N reeds gelockt is door transactie $T$ in $IS$ ofwel $IX$.
+	\item Een knoop $N$ kan gelockt zijn door transactie $T$ in $X$, $IX$ of in $SIX$ mode als en slechts als de vader van de knoop N reeds gelockt is door transactie $T$ in $IX$ ofwel $SIX$.
+	\item Een transactie T kan een knoop enkel een lock aanvragen als het geen knopen heeft geunlockt. 
+	\item Een transactie T kan een knoop $N$ enkel vrijgegven als geen van de kinderen van $N$ momenteel gelockt zijn door T.
+\end{enumerate}
+Regel 1 $\rightarrow$ geen conflicten toelaten \\ 
+Regel 5,6 $\rightarrow$ forceren 2PL protocol
+\paragraph{Toepassing}
+Vooral geschikt voor een mix tussen
+\begin{itemize}
+	\item Korte transacties die slechts een beperk aantal items vereisen
+	\item Grote transacties die volledige bestanden vereisen
+\end{itemize}
+
+
+
+\section{Using Locks for Concurrency Control in Indexes}% 1.25
+Locking gebruiken voor indexen (cfr. hoofdstuk 17)\\\\
+\textbf{Probleem}: Index begint steeds in root $\rightarrow$ grote hoeveelheid blocking
+\begin{itemize}
+	\item Root zou gelockt worden in exclusive mode
+	\item Alle conflicterende transacties moeten wachten
+\end{itemize}
+\textbf{Oplossing}: Uitbuiten boomstructuur $\rightarrow$ zoeken via index betekent boom doorlopen
+\begin{itemize}
+	\item Bovenliggende knoop niet meer nodig eens gepasseerd
+	\item Lock op parent mag opgeheven worden eens lock op kind is toegewezen
+\end{itemize} 
+\paragraph{Conservatieve benadering invoegen}
+\begin{enumerate}
+	\item Lock root in exclusive mode
+	\item Bereik kindknoop
+	\item Als het kind niet vol is $\rightarrow$ geef root vrij
+\end{enumerate}
+$\rightarrow$ Kan toegepast worden op elk niveau van de boom \\
+$\rightarrow$ Exlusieve lock worden snel vrijgegeven
+
+\paragraph{Optimistische benadering}
+\begin{itemize}
+	\item Shared lock voor de knopen leidend naar doelknoop
+	\item Exclusive lock op bladknoop
+	\item Indien invoeging leidt tot splitsing $\rightarrow$ propageer opwaarts $\rightarrow$ upgrade locks naar exclusive locks
+\end{itemize}
+
+\paragraph{Benadering met variant $B^+$-tree: B-link tree}
+Hierbij zijn alle broderknopen op hetzelfde niveau gelinkt.
+\begin{itemize}
+	\item \textbf{Zoeken}
+		\begin{itemize}
+			\item Shared lock bij opvragen pagina
+			\item Lock moet vrijgegeven worden alsvorens kind te benaderen		
+		\end{itemize}
+	\item \textbf{Invoegen}
+	\begin{itemize}
+		\item Upgrade shared lock tot exclusive lock
+		\item Bij splitsing moet vaderknoop opnieuw gelockt worden in exclusive mode
+	\end{itemize}
+	\item \textbf{Complicatie}
+		\begin{itemize}
+			\item Veronderstel invoegoperatie volgt zelfde pad als zoekoperatie
+			\item Wordt nieuw item ingevoegd in bladknoop die zorgt voor een splitsing
+			\item Wanneer zoektoch daarna wordt voorgezet wordt een foute bladknoop gevonden
+			\item Kan toch gevonden worden door \textbf{link} te volgen naar broederknoop
+		\end{itemize}
+\end{itemize}
+
+
+
+\section{Other Concurrency Control Issues}% .25
+\subsection{Insertion, Deletion, and Phantom Records}% 1
+\subsubsection{Insertion}
+Nieuwe record dat wordt ingevoerd $\rightarrow$ kan uiteraard niet benderd worden tot het bestaat
+\begin{itemize}
+	\item \textbf{Locking environment:} Write lock (exlusief)
+	\item \textbf{Timestmap environment:} Timestamp $=$ die van transactie die aanmaakt 
+\end{itemize}
+
+\subsubsection{Deletion}
+\begin{itemize}
+	\item \textbf{Locking environment:} Write lock (exlusief)
+	\item \textbf{Timestmap environment:} Latere transacties mogen item niet schrijven of lezen alvorens het verwijderd is
+\end{itemize}
+
+\subsubsection{Phantom Records}
+Veronderstel volgende situatie
+\begin{itemize}
+	\item \textbf{Transactie T}: voegt record toe met Dno=5
+	\item \textbf{Transactie T'}: selecteert alle records met Dno=5 
+\end{itemize}
+Mogelijke volgorde van uitvoer:
+\begin{itemize}
+	\item \textbf{T' na T}: Moet nieuwe record omvatten
+	\item \textbf{T na T'}: Mag nieuwe record \textbf{niet} omvatten 
+\end{itemize}
+Als T' alle records met Dno=5 al heeft gelockt zijn er geen gemeenschappelijke records tussen beide transacties $\rightarrow$ nieuwe record is \textbf{phantom record}
+
+\paragraph{Index Locking} Oplossing voor \textbf{phantom records}
+\begin{itemize}
+	\item Locken van index alvorens invoegen record
+	\item Conflict index lock $\rightarrow$ phantom record wordt opgemerkt
+\end{itemize}
+
+
+\subsection{Interactive Transactions}% .25
+Lezen van invoer en schrijven van uitvoer naar een \textbf{interactief apparaat} alvorens gegevens gecommit zijn.
+\begin{itemize}
+	\item Eventuele afhankelijkheid tussen transacties is niet gekend door systeem
+	\item Afhankelijkheid kan niet worden afgedwongen door concurrency control
+\end{itemize}
+$\rightarrow$ Uitstellen van weergeven tot alles is gecommit.
+
+
+\subsection{Latches}% .25
+Locks die slechts \textbf{voor korte duur} bestaan.
+\begin{itemize}
+	\item Volgens niet standaard protocol	
+	\item Bijvoorbeeld bij wegschrijven pagina naar schijf
+\end{itemize}

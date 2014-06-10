@@ -1,0 +1,221 @@
+\chapter{Conceptual Data Modeling Using Entities and Relationships}
+\section{Using High-Level Conceptual Data Models for Database Design}
+\begin{enumerate}
+\item \textbf{Requirements collection and analysis.} Data- en functievereisten onderzoeken voor gebruikers.
+\item \textbf{Conceptual design.} Cre\"eren van het hoogniveau, conceptuele schema van de database.
+\item \textbf{Logical Design.} Het maken van een database schema in de vorm van een \textit{implementation data model} op basis van het hoogniveau data model. Ook wel \textit{data model mapping} genoemd.
+\item \textbf{Physical Design.} Het daadwerkelijk opzetten van de interne opslagstructuren, bestandsorganisatie, indexen, toeganspaden, ... Hieronder valt ook het ontwikkelen van de applicatieprogramma's om de databasetransacties te implementeren.
+\end{enumerate}
+\textit{Zie ook figuur 7.1 op pagina \textbf{196} voor een diagram van deze fases.}
+
+
+%\section{A Sample Database Application}
+%\textit{Lees eventueel het voorbeeld in het handboek op pagina \textbf{197 - 198}.}
+\setcounter{section}{2}
+
+
+\section{Entity Types, Entity Sets, Attributes, and Keys}
+\subsection{Entities and Attributes}
+Een \textbf{entiteit} is een \textit{ding} in de echte wereld met een onafhankelijk bestaan, zij het fysiek of conceptueel. Elke entiteit heeft \textbf{attributen}, eigenschappen die de entiteit omschrijven. Deze attributen zijn een groot stuk van de data die wordt opgeslagen.
+
+Een attribuut kan verder opgesplitst worden in deelattributen, bijvoorbeeld: het attribuut \textit{``Adres''} kan bijvoorbeeld omschreven worden door de deelattributen \textit{``Straat''}, \textit{``Huisnummer''}, \textit{``Postcode''} en \textit{``Gemeente''}. Dit noemt men een \textbf{composite attribute}. In het andere geval spreekt men over een \textbf{simple attribute}.
+
+Een attribuut kan \textbf{single-valued} of \textbf{multivalued} zijn. In het laatste geval is het mogelijk dat een entiteit voor \'e\'en attribuut meerdere waarden heeft (bv. een persoon heeft geen, \'e\'en of meerdere diploma's).
+
+Een attribuut kan \textbf{stored} zijn, of kan \textbf{derived} (afgeleid) zijn uit andere attributen (bv. de \textit{``Leeftijd''} kan afgeleid worden uit de \textit{``Geboortedatum''}).
+
+Een attribuut kan de waarde \texttt{NULL} hebben, wat wil zeggen dat het attribuut niet in gebruik is voor een bepaalde entiteit of dat de waarde van het attribuut onbekend is.
+
+Bij een combinatie van twee of meer van bovenstaande mogelijkheden spreken we van een \textbf{complex attribute}.
+
+\subsection{Entity Types, Entity Sets, Keys, and Value Sets}
+Een \textbf{entity type} is een verzameling van gelijksoortige entiteiten, in een database zullen die meestal in een tabel per type worden verzameld. Een \textbf{entity set} is een momentopname van zo'n verzameling in de tijd.
+
+Een \textbf{key attribute} van een entiteitstype is een attribuut dat uniek is voor elke entiteit uit dat type (bv. het rijksregisternummer van een persoon) en deze entiteit dus onderscheidt.
+
+Een \textbf{value set} is een domein van waarden. Elk attribuut heeft een value set waar het zich aan houdt, het kan dus enkel waarden uit dat opgelegd domein aannemen.
+
+%\subsection{Initial Conceptual Design of the COMPANY Database}
+%\textit{Lees eventueel het voorbeeld in het handboek op pagina \textbf{204 - 206}.}
+
+
+\section{Relationship Types, Relationship Sets, Roles \& Structural Constraints}
+\subsection{Relationship Types, Sets and Instances}
+Een \textbf{relatietype} tussen $n$ entiteitstypes bepaalt een set van \textbf{associaties} (verbanden) tussen de entiteiten van deze entiteitstypes. Bijvoorbeeld: bij de twee entiteiten \textsc{employee} en \textsc{department} kan een relatietype \textsc{works\_for} bestaan, hierbij werkt een employee dan bij een departement.
+
+\subsection{Relationship Degree, Role Names, and Recursive Relationships}
+De \textbf{relatiegraad} van een relatie is het aantal entiteitstypes die deel uitmaken van die relatie. In het bovenstaande voorbeeld is \textsc{works\_for} dus van graad 2.
+
+\textbf{Recursieve relaties} zijn relaties waarbij een entiteitstype meerdere keren voorkomt, telkens in een andere \textbf{rol}. Bijvoorbeeld, \textsc{supervision} bepaalt een relatie tussen 2 employees.
+
+\subsection{Constraints on Binary Relationship Types}
+Er zijn 2 \textbf{structural constraints} van een relatietype:
+\begin{itemize}
+\item De \textbf{kardinaliteitsratio} van een binaire relatie bepaalt het maximum aantal \textit{relatie-instances} waaraan een entiteit kan deelnemen. Bijvoorbeeld, de kardinaliteitsratio van \textsc{department} t.o.v. \textsc{employee} is $1$:$N$, wat wil zeggen dat een departement $N$ employees kan hebben, maar een employee kan maar bij 1 departement werken.
+
+\item De \textbf{deelnamebeperking} (\textbf{participation constraint} of \textit{minimale kardinaliteit constraint}) bepaalt het minimum aantal \textit{relatie-instances} waaraan een entiteit kan deelnemen. Elke zijde van een relatie heeft ofwel een \textit{totale} participatie, ofwel een \textit{parti\"ele} participatie.
+\begin{itemize}
+\item \textbf{Totale participatie:} elke entiteit van een entiteitstype moet gerelateerd zijn aan een entiteit van een ander entiteitstype. Bijvoorbeeld: elke employee moet werken voor een departement, de participatie van \textsc{employee} in de \textsc{works\_for}-relatie is dus totaal.
+\item \textbf{Parti\"ele participatie:} een deel entiteiten van een entiteitstype moet gerelateerd zijn aan een ander entiteitstype. Bijvoorbeeld: slechts enkele employees beheren een departement, de participatie van \textsc{employee} in de \textsc{manages}-relatie is dus partieel.
+\end{itemize}
+\end{itemize}
+
+\subsection{Attributes of Relationship Types}
+Net zoals een entiteit omschreven wordt door attributen, kan ook een relatie attributen bevatten. Bijvoorbeeld, de relatie \textsc{works\_for} kan het attribuut \textit{``Start\_date''} hebben om aan te geven hoelang iemand al voor een departement werkt.
+
+
+\section{Weak Entity Types}
+\textbf{Zwakke entiteitstypes} zijn identiek aan \textit{normale} entiteitstypes met uitzondering dat ze geen \textit{key attribute} hebben. Ze hangen altijd af van een relatie omdat die relatie hun betekenis geeft. De entiteit die een zwakke entiteit identificeert, is de \textbf{eigenaar} van de zwakke entiteit. Er is steeds een totale participatie in de identificerende relatie.
+
+Bijvoorbeeld, een \textsc{dependent} van een \textsc{employee} heeft geen key attribute maar elke \textsc{dependent} verwijst maar naar 1 bestaande \textsc{employee}.
+
+Een zwak entiteitstype heeft meestal een \textbf{partial key} (\textbf{discriminator}), als er dan meerdere zwakke entiteiten van eenzelfde eigenaar afhankelijk zijn, kan er gemakkelijk een onderscheid gemaakt worden.
+
+
+%\section{Refining the ER Design for the COMPANY Database}
+%\textit{Lees eventueel de tekst omtrent het voorbeeld in het handboek, 6e editie: pagina \textbf{214-215}.}
+\setcounter{section}{6}
+
+
+\section{ER Diagrams, Naming Conventions, and Design Issues}
+\subsection{Summary of Notation for ER Diagrams}
+\textit{De notaties van de structuren in ER-diagrammen die hier overlopen zijn, staan op pagina \textbf{217}.}
+
+\subsection{Proper Naming of Schema Constructs}
+Voor entiteitstypes gebruiken we namen in het enkelvoud. Bij het opstellen van een database uit een tekst geldt dat de zelfstandige naamwoorden meestal voor entiteitstypes zijn en de werkwoorden voor relatietypes.
+
+Entiteitstypes en relatietypes schrijven we volledig in hoofdletters. Attributen beginnen met een hoofdletter. De namen van rollen zijn volledig in kleine letters.
+
+\subsection{Design Choices for ER Conceptual Design}
+Het gebeurt vaak bij het ontwerpen van de database dat een concept eerst als attribuut wordt toegekend aan 1 entiteitstype, maar dat het uiteindelijk een relatietype wordt omdat het naar een ander entiteitstype verwijst.
+
+Het kan ook voorkomen dat een attribuut dat bij verschillende entiteitstypes aanwezig is, wordt vervangen door een onafhankelijk entiteitstype. Het omgekeerde kan ook.
+
+\subsection{Alternative Notations for ER Diagrams}
+In plaats van het noteren van structurele constraints m.b.v. de kardinaliteitsratio en participatiebeperkingen (enkele of dubbele lijn), kan je ze ook noteren in de vorm \textit{(min,max)}. Deze waarden geven dan het minimum en maximum aantal relatie-instances weer waaraan een entiteit moet verbonden zijn. Als \textit{min} gelijk is aan 0, is er sprake van parti\"ele participatie, anders totale participatie.
+
+\textit{Zie figuur 7.15 op pagina \textbf{220} voor een voorbeeld hiervan.}
+
+
+\section{Relationship Types of Degree Higher than Two}
+\subsection{Choosing between Binary and Ternary (or Higher-Degree) Relationships}
+Het is uiteraard mogelijk om relaties te hebben met een graad groter dan 2. Ternaire relaties of relaties van \textit{nog} hogere graad komen weliswaar niet vaak voor, omdat het in theorie mogelijk is om zo'n relatie op te splitsen in relaties van lagere graad. Dan verkrijgen we:
+\begin{itemize}
+\item maak 3 binaire relaties tussen de entiteitstypes van de ternaire relatie.
+\item maak van de ternaire relatie een \textit{zwak entiteitstype}, dan zullen alle andere entiteitstypes van de ternaire relatie een nieuwe, binaire relatie krijgen met het nieuwe, zwakke entiteitstype. Afhankelijk van de situatie hoeft dit geen \textit{zwak} entiteitstype te zijn, als er een unieke \textit{key} kan worden gevonden die elke entiteit van dit type kan identificeren.
+\end{itemize}
+
+\subsection{Constraints on Ternary (or Higher-Degree) Relationships}
+Voor relatietypes van een hogere graad zijn er twee notaties: kardinaliteitsratio of min-max. Elk heeft zijn eigen constraints. Bij de \textit{kardinaliteitsratio} gebruiken we $M$ en $N$ om ``een aantal'' deelnemers aan de relatie voor te stellen. Bij \textit{min-max} geven het minimum en maximum aan hoeveel entiteiten van een entiteitstype mogen deelnemen aan de relatie.
+
+
+\section{Subclasses, Superclasses, and Inheritance}
+Al het voorgaande viel onder het ER model. Dit schema breiden we uit tot EER, ofwel \textbf{Enhanced ER}. Deze uitbreiding omvat subklassen, superklassen, alsook de daarmee gepaard gaande \textbf{specialisatie} en \textbf{generalisatie}. Ook voeren we \textbf{overerving} in voor attributen en relaties.
+
+\textit{Op pagina \textbf{225} staat een voorbeeld van hoe dit in een schema genoteerd kan worden.}
+
+
+\section{Specialization and Generalization in EER}
+\subsection{Specialization}
+\textbf{Specialisatie} is het proces van het aanmaken van subklassen voor een entiteitstype. Het entiteitstype waarvoor subklassen worden gecre\"eerd is dan de superklasse van deze nieuwe subklassen. Subklassen worden gemaakt om specifiekere attributen te kunnen toekennen aan een stuk van het superklasse-entiteitstype. Deze worden ook wel \textbf{lokale attributen} genoemd.
+
+Een entiteitstype kan meerdere specialisaties hebben, elk met 1 of meerdere subklassen.
+
+\subsection{Generalization}
+\textbf{Generalisatie} is in principe het omgekeerde proces: je groepeert enkele entiteitstypes door enkele gemeenschappelijke attributen toe te kennen aan een nieuwe superklasse van deze entiteitstypes.
+
+
+\section{Constraints and Characteristics of Specialization and Generalization Hierarchies}
+\subsection{Constraints on Specialization and Generalization}
+Bij sommige specialisaties is het mogelijk om precies vast te leggen welke entiteiten in een subklasse terecht moeten komen. Zo'n subklassen heten dan \textbf{predikaatgedefinieerde} subklassen (of predikaatgedefinieerd). De conditie die dit beslist is het \textbf{bepalende predikaat}.
+
+Als alle subklassen in een specialisatie hun conditie op hetzelfde superklasse-attribuut hebben, dan heet deze specialisatie een \textbf{attribuutgedefinieerde} specialisatie. Het attribuut heet dan het \textbf{bepalende attribuut}.
+
+Als de specialisatie bepaald is door andere kenmerken, spreken we van een \textbf{gebruikersgedefinieerde} subklasse.
+
+~
+
+\noindent De constraint \textbf{disjointness} (\textbf{d}) bepaalt dat een entiteit deel kan uitmaken van maximaal 1 subklasse van een bepaalde specialisatie. Als de entiteiten van een specialisatie niet disjunct moeten zijn, spreekt men van \textbf{overlapping} (\textbf{o}).
+
+De constraint \textbf{volledigheid} kan totaal of partieel zijn. Bij \textbf{totale specialisatie} moet elke entiteit van een superklasse ook deel moet uitmaken van minstens \'e\'en subklasse ervan, dit wordt genoteerd met een dubbele lijn. Bij \textbf{parti\"ele specialisatie} moet dit niet (enkele lijn).
+
+Deze 2 soorten constraints zijn onafhankelijk van elkaar.
+
+\subsection{Specialization and Generalization Hierarchies and Lattices}
+Subklassen kunnen nog verder onderverdeeld worden in meerdere subklassen. Hierbij moet een onderscheid gemaakt worden tussen:
+\begin{itemize}
+\item Een \textbf{specialisatie-hi\"erarchie}: een subklasse kan maar van 1 superklasse afhangen.
+\item Een \textbf{specialisatie-tralie}: een subklasse kan van meer dan 1 superklasse afhangen. Men spreekt ook van een \textit{gedeelde subklasse}.
+\end{itemize}
+Een subklasse erft de attributen van alle directe en indirecte superklassen.
+
+~
+
+\noindent Er wordt ook gesproken van \textit{generalisatie-hi\"erarchie} en \textit{generalisatie-tralie}. Deze zijn analoog aan de specialisatie-varianten.
+
+\subsection{Utilizing Specialization and Generalization in Refining Conceptual Schemas}
+Bij het ontwikkelen van een database schema volgens het \textbf{top-down} principe zal er standaard vertrokken worden vanuit een aantal klassen voor een aantal basis-identiteitstypes. Deze klassen zullen al naargelang het doel van de database gespecialiseerd worden. Het kan gebeuren dat je merkt dat een subklasse eigenlijk van meer dan \'e\'en superklasse moet afhangen, wat een tralie cre\"eert.
+
+~
+
+\noindent Een tweede manier is het \textbf{bottom-up} principe. Dan begin je met zo specifiek mogelijke klassen te maken, die je vervolgens naargelang hun doel generaliseert naar superklassen.
+
+
+\section{Modeling of UNION Types Using Categories in EER}
+Soms is het nodig om een entiteitstype in een relatie te kunnen voorstellen met meerder superklassen. Die worden dan gegroepeerd in een \textbf{unie} (\textbf{u}), een subklasse van zo'n unie heet een \textbf{categorie}. Een entiteit in de subklasse van de categorie behoort dan tot 1 superklasse (uit de unie van superklassen).
+
+Een \textbf{totale categorie} houdt de unie van alle entiteiten in de superklassen bij (dubbele lijn). Een \textbf{parti\"ele categorie} houdt een deelverzameling van deze unie bij (enkele lijn).
+
+~
+
+\noindent Vergelijk met een gemeenschappelijke subklasse:
+\begin{itemize}
+\item Een gemeenschappelijke subklasse is een deelverzameling van een doorsnede van superklassen.
+\item Een entiteit in de subklasse behoort tot elke superklasse.
+\item Alle attributen van de superklassen worden overge\"erfd naar de subklassen.
+\end{itemize}
+
+
+\section{A Sample UNIVERSITY EER Schema, Design Choices, and Formal Definitions}
+\subsection{The UNIVERSITY Database Example}
+\textit{Lees het voorbeeld met nogal grote tekening in het boek op pagina's \textbf{239 - 241}.}
+
+\subsection{Design Choices for Specialization/Generalization}
+Er zijn een aantal guidelines die je kan volgen bij het opmaken van een database schema:
+\begin{itemize}
+\item Maak enkel subklassen aan als het van belang is voor de database, anders wordt het schema onnodig ingewikkeld.
+\item Subklassen met weinig lokale attributen en geen specifieke relaties kunnen best in hun superklasse gestoken worden. De lokale attributen zet je dan op waarde \texttt{NULL} voor entiteiten die geen deel uitmaken van de ``subklasse''.\\
+Dit kan ook gedaan worden als alle subklassen weinig lokale attributen hebben.
+\item Unies en categorie\"en moeten worden vermeden tenzij het niet anders kan.
+\item Het kiezen voor disjunctie/overlapping en totale/parti\"ele constraints hangt af van het doel van de database. Standaard kiest men voor overlapping en de parti\"ele contraint.
+\end{itemize}
+
+
+\newpage
+\section{Data Abstraction, Knowledge Representation, \& Ontology Concepts}
+Hier worden 4 abstractieconcepten besproken die worden gebruikt in EER modellen en \textit{knowledge-representation} schema's. Deze laatste zijn ook een soort database-modellen, maar waarbij wordt uitgegaan van het goed representeren van reeds gegeven data.
+
+\subsection{Classification and Instantiation}
+\textbf{Classificatie} is het onderverdelen van objecten en entiteiten in objectklassen en entiteitstypes, ook wel het \textit{identificeren} genoemd. 
+
+\textbf{Instantiatie} is net het omgekeerde, namelijk het in het leven roepen van objecten en entiteiten op basis van reeds gemaakte objectklassen en entiteitstypes.
+
+\subsection{Identification}
+Bij \textbf{identificatie} zijn klassen en objecten uniek identificeerbaar door een zogenaamde \textbf{identifier}. Identificatie is nodig op twee niveau's: om een onderscheid te maken tussen objecten en klassen, en om objecten te kunnen identificeren en linken aan hun betekenis in de echte wereld.
+
+\subsection{Specialization and Generalization}
+\textbf{Specialisatie} betekent hier het verder onderverdelen van klassen van objecten in meer gespecialiseerde subklassen. \textbf{Generalisatie} is weer net het omgekeerde.
+
+\subsection{Aggregation and Association}
+Een \textbf{aggregatie} is een abstract concept om samengestelde objecten te maken uit een aantal componentobjecten. Dit kan bijvoorbeeld zijn: het combineren van attributen uit een aantal objecten tot 1 aggregaatobject. De objecten moeten weliswaar reeds een zekere afhankelijkheid ten op zichte van mekaar hebben, bijvoorbeeld van hetzelfde entiteitstype afkomstig zijn.
+
+Een \textbf{associatie} wordt gebruikt om onafhankelijke objecten met mekaar te associ\"eren. Dit wordt in EER voorgesteld met een relatie.
+
+\subsection{Ontologies and the Semantic Web}
+Een populair concept dezer dagen is het \textbf{semantische web}. Veel informatie is opgeslagen in documenten en de bedoeling is om die documenten op een geautomatiseerde manier te leren interpreteren. Daarvoor moet dus een \textbf{ontologie} opgesteld worden, wat op volgende manieren kan:
+\begin{itemize}
+\item Met een \textbf{thesaurus} (woordenboek) de relatie tussen woorden weergeven die een concept vormen.
+\item Een \textbf{taxonomy} beschrijft hoe een aantal concepten met mekaar geassocieerd zijn.
+\item Een gedetailleerd databaseschema wordt soms als een ontologie beschouwd omdat het concepten (entiteiten en attributen) beschrijft en de relaties ertussen.
+\item Een \textbf{logische theorie} die gebruik maakt van wiskundige logica om zo concepten te defini\"eren.
+\end{itemize}

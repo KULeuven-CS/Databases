@@ -1,0 +1,314 @@
+\chapter{SQL: Data Definition, Constraints, and Basic Queries and Updates}
+SQL (Structured Query Language) is een ANSI/ISO-standaardtaal voor een relationeel DBMS. Het is een gestandaardiseerde taal die gebruikt kan worden voor taken zoals het bevragen en het aanpassen van gegevens in een relationele databank. SQL kan met vrijwel alle moderne relationele databankproducten worden gebruikt. 
+
+
+
+\section{SQL Data Definition and Data Types}
+SQL gebruikt de termen \textit{table}, \textit{row} en \textit{column} voor de termen \textit{relation}, \textit{tuple} en \textit{attribute} die in het formele, relationele model gebruikt worden. Het belangrijkste SQL-commando voor het defini\"eren van data is het \textsc{create}-statement om schema's, relaties, domeinen, enz. te cre\"eren.
+
+
+\subsection{Schema and Catalog Concepts in SQL}
+Oudere versies van SQL kenden het concept van relationele database-schema's niet. Alle tabellen werden beschouwd als een deel van hetzelfde schema.
+
+Een \textbf{SQL schema} wordt ge\"identificeerd door een \textit{schemanaam} en bevat een \textbf{authorization identifier} om de gebruiker of het account die het schema beheert, te identificeren. Het bevat ook \textbf{descriptors} voor elk element in het schema. \textbf{Schema elements} omvatten tables, views, domains, constraints, enz.
+
+SQL maakt ook gebruik van een \textbf{catalog}: een verzameling van schema's in een SQL-omgeving (een installatie op een computersysteem van een DBMS die gebruik maakt van SQL).
+
+Het aanmaken van een nieuw schema gaat als volgt.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CREATE SCHEMA} COMPANY \textbf{AUTHORIZATION} \textit{`owner'};
+
+
+\subsection{The CREATE TABLE Command in SQL }
+Het commando \textsc{create table} wordt gebruikt om een niuewe relatie te defini\"eren door een naam op te geven en de attributen te specifi\"eren.
+
+Er zijn twee manieren om een nieuwe tabel te defini\"eren, de tweede manier is de aangeraden manier. Op de plaats van de puntjes moeten nog de attributen met hun datatypes (en domeinen) ingevuld worden. Dit zien we in 4.1.3.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CREATE TABLE} EMPLOYEE (\dots);
+
+\hspace{10mm}
+\textbf{CREATE TABLE} COMPANY.EMPLOYEE (\dots);
+
+
+\subsection{Attribute Data Types and Domains in SQL}
+Voor elk attribuut wordt er tussen de haakjes in het \textsc{create table}-statement een \textbf{naam} en een \textbf{datatype} ingevuld. Eventueel worden er nog per attribuut enkele restricties toegevoegd. Na de attributen kunnen er nog tabelrestricties toegevoegd worden.
+
+Er bestaan verschillende soorten datatypes:
+\begin{itemize}
+	\item \textbf{Numeric data types} omvatten \textbf{integers} (\textsc{integer}, \textsc{int} en \textsc{smallint}) en \textbf{floating-point getallen} van verschillende precisie: \textsc{float} (of \textsc{real}) en \textsc{double precision}.
+	\item \textbf{Character-string data types} zijn ofwel \textit{fixed-length} (\textsc{char}($n$) en \textsc{character}($n$) met $n$ het aantal karakters) ofwel \textit{variable-length} (\textsc{varchar}($n$), \textsc{char varying}($n$) of \textsc{character varying}($n$) met $n$ het maximum aantal karakters).
+	\item \textbf{Bit-string data types} zijn \textit{fixed-length} (\textsc{bit}($n$)) of \textit{variable-length} (\textsc{bit varying}($n$)).
+	\item \textbf{Boolean data types} hebben de waarden \texttt{TRUE} of \texttt{FALSE}. In SQL is er door de aanwezigheid van \texttt{NULL}-waarden nog een derde waarde mogelijk: \texttt{UNKNOWN}.
+	\item Het \textbf{DATE}-datatype bestaat uit 10 posities heeft als componenten \textsc{year}, \textsc{month} en \textsc{day} in de vorm \texttt{YYYY-MM-DD}.\\
+	Het \textbf{TIME}-datatype heeft maximum 8 posities en heeft als componenten \textsc{hour}, \textsc{minute} en \textsc{second} in de vorm \texttt{HH:MM:SS}. Het \textbf{TIME WITH TIME ZONE}-datatype bevat nog 6 extra posities voor een afwijking t.o.v. de standaard universele tijdzone.
+	\item Het \textbf{TIMESTAMP}-datatype bevat de \textsc{date}- en \textsc{time}-velden, plus minimaal 6 posities voor decimale delen van een seconde en een optionele \textsc{with time zone}-qualifier.
+	\item Het \textbf{INTERVAL}-datatype specifieert een interval (een relatieve waarde) die gebruikt kan worden om de absolute waarde van een \textsc{date}, \textsc{time} of \textsc{timestamp} te verhogen of te verlagen.
+\end{itemize}
+
+
+
+\section{Specifying Constraints in SQL}
+\subsection{Specifying Attribute Constraints and Attribute Defaults}
+Omdat SQL \texttt{NULL}-waarden toelaat als attribuutwaarde, kunnen we een constraint \texttt{NOT NULL} specifi\"eren als \texttt{NULL} niet toegelaten is als waarde voor een bepaald veld.
+
+Men kan ook een \textbf{default value} defini\"eren voor een attribuut d.m.v. \textsc{default} {\textless}\textit{value}{\textgreater}. Als er geen default waarde gedefinieerd is, is de default waarde \texttt{NULL}.
+
+Een ander type constraint kan attribuut- en domeinwaarden beperken d.m.v. \textsc{check} $x$ waarbij $x$ een attribuut- of domeindefinitie is. Bijvoorbeeld:
+
+\vspace{1mm}\hspace{10mm}
+\textit{Dnumber} INT \textbf{NOT NULL}
+
+\hspace{10mm}
+\textbf{CHECK} ($\textit{Dnumber} >0$ \textbf{AND} $\textit{Dnumber} <21$);
+\vspace{3mm}
+
+\noindent De \textsc{check}-clausule kan men ook gebruiken samen met de \textsc{create domain}-statement.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CREATE DOMAIN} D\_NUM \textbf{AS} INTEGER
+
+\hspace{10mm}
+\textbf{CHECK} ($\text{D\_NUM} >0$ \textbf{AND} $\text{D\_NUM} <21$); 
+
+
+\subsection{Specifying Key and Referential Integrity Constraints}
+\textbf{PRIMARY KEY} definieert \'e\'en of meerdere attributen die de primaire sleutel van een relatie vormen. Bijvoorbeeld: de primaire sleutel van \textsc{department} kan als volgt gedefinieerd worden. Deze restrictie gebeurt bij onmiddellijk bij de definitie van het attribuut.
+
+\vspace{1mm}\hspace{10mm}
+Dnumber INT \textbf{PRIMARY KEY};
+\vspace{3mm}
+
+\noindent Men kan een restrictie ook specifi\"eren door met het sleutelwoord \textbf{CONSTRAINT} een restrictie (met een naam) te defini\"eren. Dit is later makkelijker aanpasbaar.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CONSTRAINT} DEPTPK
+
+\hspace{15mm}
+\textbf{PRIMARY KEY} (\textit{Dnumber}),
+
+~
+
+\noindent \textbf{UNIQUE} definieert de alternatieve (secundaire) sleutels. De manieren om alternatieve sleutels te defini\"eren zijn analoog aan de manieren om primaire sleutels te defini\"eren.
+
+~
+
+\noindent \textbf{Referenti\"ele integriteit} wordt gespecifieerd door \textbf{FOREIGN KEY}. Bij een \textbf{integrity violation} zal SQL standaard de \textsc{restrict}-actie uitvoeren. De update-operatie wordt dus geweigerd.
+
+De gebruiker kan ook een andere actie instellen, een \textbf{referential triggered action} kan aan elke foreign key toegevoegd worden. De andere acties zijn \textsc{set null}, \textsc{cascade} en \textsc{set default}. Zo'n actie moet meegegeven worden bij een trigger: \textsc{on delete} of \textsc{on update}.
+
+Bijvoorbeeld: we bepalen dat de foreign key \textit{``Mgr\_ssn''} in \textsc{department} refereert naar de primaire sleutel \textit{``Ssn''} in \textsc{employee}. Deze constraint wordt toegevoegd in de definitie van de tabel \textsc{department}, na de definities van de attributen.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CONSTRAINT} DEPTMGRFK
+
+\hspace{15mm}
+\textbf{FOREIGN KEY} (\textit{Mgr\_ssn}) \textbf{REFERENCES} EMPLOYEE(\textit{Ssn})
+
+\hspace{35mm}
+\textbf{ON DELETE} SET DEFAULT
+
+\hspace{35mm}
+\textbf{ON UPDATE} CASCADE,
+
+
+\subsection{Giving Names to Constraints}
+Het is het beste om alle constraints een naam te geven (zie de voorbeelden in de vorige sectie). De namen van alle constraints in eenzelfde schema moeten uniek zijn.
+
+
+\subsection{Specifying Constraints on Tuples Using CHECK}
+Als toevoeging op de key- en referentie-constraints zijn er nog andere table-constraints die gedefinieerd kunnen worden door optionele \textbf{CHECK}-clausules op het einde van een \textbf{CREATE TABLE}-statement toe te voegen. Dit zijn de \textbf{tuple-based constraints} omdat ze voor elke tupel individueel nagekeken worden telkens wanneer een tupel wordt toegevoegd of aangepast. 
+
+Bijvoorbeeld: het moment dat een manager aangesteld wordt om een bepaald departement te leiden, kan uiteraard niet plaatsvinden voordat het departement opgericht wordt. De volgende constraint wordt toegevoegd achteraan de \textbf{CREATE TABLE}-statement van \textsc{department}.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CHECK} (Dept\_create\_date $<=$ Mgr\_start\_date);
+
+
+
+\newpage
+\section{Basis Retrieval Queries in SQL}
+SQL heeft \'e\'en basisoperatie om gegevens op te vragen: \textbf{SELECT}. Deze operatie is \textit{niet hetzelfde} als de \textsc{select}-operatie in relationele algebra.
+
+
+\subsection{The SELECT-FROM-WHERE Structure of Basic SQL Queries}
+De basisvorm van het \textbf{SELECT}-statement is hieronder gegeven. Dit wordt ook wel het \textbf{mapping block} of het \textbf{select-from-where block} genoemd.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} {\textless}\textit{attributenlijst}{\textgreater}
+
+\hspace{10mm}
+\textbf{FROM} {\textless}\textit{tabellenlijst}{\textgreater}
+
+\hspace{10mm}
+\textbf{WHERE} {\textless}\textit{condities}{\textgreater}
+\vspace{3mm}
+
+\noindent Hierbij wordt {\textless}\textit{condities}{\textgreater} ingevuld door een Booleaanse conditie: de \textbf{selectievoorwaarde}. Een conditie als $(\textit{Dnumber} = \textit{Dno})$ noemen we een \textbf{joinconditie} omdat het 2 tupels combineert.
+
+\textit{Voor voorbeelden van select-from-where blokken, zie pagina \textbf{94-96}.}
+
+
+\subsection{Ambiguous Attribute Names, Aliasing, Renaming, and Tuple Variables}
+In SQL kunnen we dezelfde naam gebruiken voor 2 of meerdere attributen, zolang ze zich in verschillende relaties bevinden. Bijvoorbeeld:
+
+\vspace{1mm}\hspace{10mm}
+\textbf{WHERE} CAR.\textit{Name} = BICYCLE.\textit{Name};
+\vspace{3mm}
+
+\noindent Als we een query hebben die tweemaal gebruik maakt van dezelfde relatie, kunnen we de aparte verwijzingen aparte namen geven: een \textbf{alias}. Deze aliassen zijn dan een soort kopie\"en van de originele relatie. Bijvoorbeeld:
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} E.\textit{Fname}, E.\textit{Lname}, S.\textit{Fname}, S.\textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E, EMPLOYEE \textbf{AS} S
+
+\hspace{10mm}
+\textbf{WHERE} E.\textit{Super\_ssn} = S.\textit{Ssn};
+\vspace{3mm}
+
+\noindent Het is ook mogelijk om de attributen van een relatie te hernoemen. Bijvoorbeeld:
+
+\vspace{1mm}\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E(\textit{Fn}, \textit{Mi}, \textit{Ln}, \textit{Ssn}, \textit{Bd}, \textit{Addr}, \textit{Sex}, \textit{Sal}, \textit{SSsn}, \textit{Dno})
+
+
+\subsection{Unspecified WHERE Clause and Use of the Asterisk}
+Als de \textbf{WHERE}-clausule ontbreekt, wordt er geen conditie opgelegd wordt op de tupels. Alle tupels van de relatie (gespecifieerd in de \textbf{FROM}-clausule) voldoen aan de query.
+
+Als er meer dan 1 relatie gespecifieerd is in de \textbf{FROM}-clausule en als er geen \textbf{WHERE}-clausule is, dan wordt het \textbf{Carthesisch product} van de relaties genomen.
+
+Als men alle attributen wil selecteren in de \textbf{SELECT}-clausule, zet men gewoon een asterisk (*) achter \textbf{SELECT}.  Dan moet men niet alle mogelijke attributen opsommen.
+
+
+\subsection{Tables as Sets in SQL}
+SQL behandelt een tabel meestal niet als een set maar als een \textbf{multiset}. Duplicaten van tupels kunnen meer dan \'e\'en keer voorkomen in een tabel en in het resultaat van een query. SQL verwijdert duplicaten \textit{niet automatisch} uit het resultaat van een query, dit heeft verschillende redenen.
+\begin{itemize}
+\item Het verwijderen van duplicaten is een intensieve taak. Men kan dit toch doen door alle tupels te sorteren en dan de duplicaten te verwijderen.
+\item Het kan zijn dat de gebruiker de duplicaten wel wil zien in het resultaat van zijn query.
+\item Als een aggregaatfunctie wordt toegepast op tupels (zie 5.1.7), willen we in de meeste gevallen geen duplicaten verwijderen. 
+\end{itemize}
+Als we toch alle duplicaten uit het resultaat willen verwijderen, kunnen we \textbf{SELECT DISTINCT} gebruiken. Als we de duplicaten wel willen zien, kunnen we \textbf{SELECT ALL} gebruiken, dit is de standaard optie.
+
+~
+
+\noindent SQL maakt ook gebruik van de wiskundige \textbf{set theory} dat onderdeel is van de relationele algebra (zie H6). Er bestaan 3 verzamelingsoperaties: \textbf{UNION}, \textbf{EXCEPT} en \textbf{INTERSECT}. Het resultaat van deze operatoren is een \textit{set} van tupels, dit wil zeggen dat duplicaten verwijderd worden. SQL heeft ook corresponderende operaties voor multisets, hierbij wordt het keyword \textbf{ALL} toegevoegd, bijvoorbeeld \textbf{UNION ALL}. Deze operaties worden als volgt gebruikt.
+
+\vspace{1mm}\hspace{10mm}
+({\textless}\textit{select-from-where block}{\textgreater}) \textbf{UNION} ({\textless}\textit{select-from-where block}{\textgreater})
+
+\subsection{Substring Pattern Matching and Arithmetic Operators}
+
+In SQL kunnen we vergelijkingscondities defini\"eren op basis van substrings, dit doen we met de vergelijkingsoperator \textbf{LIKE}. We kunnen dit gebruiken voor \textbf{string pattern matching}, we plaatsen hiervoor de substring tussen 2 \%-tekens. Het \%-teken staat voor 0 of meerdere willekeurige tekens, een underscore (\_) vervangt een enkel karakter. Bijvoorbeeld: we willen de namen opvragen van de werknemers die in Houston wonen.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Fname}, \textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE
+
+\hspace{10mm}
+\textbf{WHERE} \textit{Address} \textbf{LIKE} \textit{`\%Houston\%'};
+\vspace{3mm}
+
+\noindent We kunnen ook gewone wiskundige operaties gebruiken: optellen (+), aftrekken (-), vermenigvuldigen (*) en delen (/). Twee strings kunnen we samenvoegen met de samenvoegingsoperator $||$.
+
+De vergelijkingsoperator \textbf{BETWEEN} kan je gebruiken om alle tupels met een attribuutwaarde tussen 2 constanten te selecteren. De volgende 2 condities zijn identiek.
+
+\vspace{1mm}\hspace{10mm}
+$(\textit{Salary} \geqslant 30000) \textbf{ AND }(\textit{Salary} \leqslant 40000)$
+
+\hspace{10mm}
+\textit{Salary} \textbf{BETWEEN} 30000 \textbf{AND} 40000
+
+
+\subsection{Ordering of Query Results}
+SQL laat met \textbf{ORDER BY} toe het resultaat van een query te sorteren volgens de waarden van 1 of meerdere attributen die voorkomen in dit resultaat. We kunnen gebruik maken van \textbf{DESC} en \textbf{ASC} (standaard) om de resultaten in dalende (resp. stijgende) volgorde weer te geven.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Fname}, \textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE
+
+\hspace{10mm}
+\textbf{ORDER BY} \textit{Fname} \textbf{DESC}, \textit{Lname} \textbf{ASC};
+
+
+\subsection{Discussion and Summary of Basic SQL Retrieval Queries}
+Kort samengevat kan een \textbf{retrieval query} in SQL uit 4 delen bestaan:
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} {\textless}\textit{attributenlijst}{\textgreater}
+
+\hspace{10mm}
+\textbf{FROM} {\textless}\textit{tabellenlijst}{\textgreater}
+
+\hspace{10mm}
+[ \textbf{WHERE} {\textless}\textit{conditie}{\textgreater} ]
+
+\hspace{10mm}
+[ \textbf{ORDER BY} {\textless}\textit{attributenlijst}{\textgreater} ];
+
+
+
+\section{INSERT, DELETE, and UPDATE Statements in SQL}
+\subsection{The INSERT Command}
+\textbf{INSERT} wordt gebruikt om een enkele tupel toe te voegen aan een relatie. Hiervoor specifi\"eren we de relatienaam en een lijst van waarden voor deze tupel. De waarden moeten in dezelfde volgorde staan als de attributen in de relatie (zoals beschreven in \textbf{CREATE TABLE}).
+
+\vspace{1mm}\hspace{10mm}
+\textbf{INSERT INTO} DEPARTMENT
+
+\hspace{10mm}
+\textbf{VALUES} (\textit{`Research'}, 5, \textit{`333445555'}, \textit{`1988-05-22'});
+\vspace{3mm}
+
+\noindent We kunnen een attribuut weglaten als \texttt{NULL} toegelaten is of als er een default waarde bestaat.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{INSERT INTO} EMPLOYEE(\textit{Fname}, \textit{Lname}, \textit{Ssn})
+
+\hspace{10mm}
+\textbf{VALUES} (\textit{`Richard'}, \textit{`Marini'}, \textit{`653298653'});
+
+
+
+\subsection{The DELETE Command}
+\textbf{DELETE} wordt gebruikt om bepaalde tuples te verwijderen uit een relatie en bevat een \textbf{WHERE}-clausule om de tuples te selecteren.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{DELETE FROM} EMPLOYEE
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Lname} = \text{`Brown'}$;
+\vspace{3mm}
+
+\noindent Om de hele tabel te verwijderen, kunnen we \textbf{DROP TABLE} gebruiken.
+
+
+\subsection{The UPDATE Command}
+\textbf{UPDATE} wordt gebruikt om attribuutwaarden van 1 of meerdere geselecteerde tupels aan te passen. Ook hier is een \textbf{WHERE}-clausule nodig om de aan te passen tuples te selecteren. Een bijkomende \textbf{SET} specifieert de aan te passen attributen en hun nieuwe waarden.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{UPDATE} PROJECT
+
+\hspace{10mm}
+\textbf{SET} $\textit{Plocation} = \text{`Bellaire'}$, $\textit{Dnum} = 5$
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Pnumber} = 10$;
+
+
+\section{Additional Features of SQL}
+\begin{itemize}
+\item In hoofdstuk 5 bespreken we verschillende technieken om complexe \textit{retrieval} query's te maken.
+\item SQL heeft verschillende technieken om programma's te schrijven in verschillende programmeertalen om toegang te krijgen tot databases.
+\item Er was vroeger de mogelijkheid om indices te cre\"eren: \textbf{CREATE INDEX}.
+\item SQL heeft \textbf{transaction control commands}, zie hoofdstuk 20.
+\item SQL kan omgaan met \textbf{privileges}.
+\item In SQL is het mogelijk om \textbf{triggers} te defini\"eren.
+\item SQL heeft verschillende eigenschappen overge\"erfd van objectgeori\"enteerde modellen, dit leidt tot geavanceerde relationele systemen: \textbf{object-relational}.
+\item SQL en relationele databases kunnen overweg met nieuwe technologie\"en zoals XML.
+\end{itemize}

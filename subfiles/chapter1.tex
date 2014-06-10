@@ -1,0 +1,135 @@
+\chapter{Introduction to Databases}
+
+\section{Introduction}
+
+Een \textit{database} heeft volgende eigenschappen:
+\begin{itemize}
+ \item Het is een representatie van een aspect in de echte wereld, een miniwereld, ook wel \textbf{universe of discourse} (UoD)  genaamd.
+ \item Een database is een verzameling van gerelateerde informatie/data.
+ \item Een database wordt ontworpen, gebouwd en ingevuld voor een specifiek doel.
+ \item Aanpassingen moeten zo snel mogelijk weergegeven worden in de database.
+\end{itemize}
+Een \textbf{database management system} (DBMS) is een set van programma's die de gebruiker toelaat een database te cre\"eren en te onderhouden.
+
+\section{An Example}
+Het manipuleren van een database omvat \textit{querying} en \textit{updating}.
+Een query moet gespecifieerd zijn in een bepaalde query-taal, behorende tot het DBMS, alvorens hij kan worden uitgevoerd.
+\begin{enumerate}
+ \item Het ontwikkelen van een applicatie voor een bestaande database, of het ontwikkelen van een compleet nieuwe database start met een fase genaamd \textbf{requirements specification and analysis}. De eisen/voorwaarden van de database worden hier in detail vastgelegd.
+ \item De eisen/voorwaarden worden omgevormd tot een \textbf{conceptual design} dat weergegeven en bewerkt kan worden op een computer.
+ \item Het conceptual design wordt omgezet naar een \textbf{logical design}, dat ge\"implementeerd kan worden in een commercieel DBMS.
+ \item Het logical design wordt omgezet in een \textbf{physical design}, waar men de verdere specificaties voor opslag en toegang tot de database zal vastleggen. Hierna kan men beginnen de database te bevolken. 
+\end{enumerate}
+
+
+\newpage
+\section{Characteristics of the Database Approach}
+Een database bestaat uit een enkele opslagplaats waar gegevens worden bijgehouden die \'e\'en keer gedefinieerd worden en nadien toegankelijk zijn voor alle gebruikers. 
+
+\subsection{Self-Describing Nature of a Database System}
+Een basiskenmerk van een databasesysteem is dat het systeem niet enkel de database zelf bevat maar ook een complete definitie of beschrijving van de databasestructuur en zijn beperkingen. Deze definitie wordt bijgehouden in de DBMS \textbf{catalogus}. De informatie in deze catalogus is de zogenaamde \textbf{meta-data}, en beschrijft de structuur van de primaire database.
+
+\subsection{Insulation between Programs and Data, and Data Abstraction}
+In traditionele bestandsverwerking is de structuur van de \textit{data files} ingebouwd in het programma dat gebruik maakt van het bestand. Als de structuur van een bestand gewijzigd wordt, zullen dus ook alle programma's die gebruik maken van het bestand, aangepast moeten worden. Een DBMS daarentegen bewaart de structuur van de bestanden in de catalogus, apart van de programma's die het gebruiken. We noemen dit \textbf{program-data independence}. 
+
+Een \textit{operation} (functie of methode) bestaat uit 2 delen. De \textit{interface} (\textit{signature}) van een operatie bevat de naam van de operatie en de \textit{data types} van zijn argumenten (parameters). De \textit{implementatie} van de operatie is apart gedefinieerd en kan aangepast worden zonder dat de interface gewijzigd moet worden. Gebruikersprogramma's kunnen met de data werken door middel van operatienamen en -parameters, onafhankelijk van hoe de operaties ge\"implementeerd zijn. We noemen dit \textbf{program-operation independence}.
+
+De karakteristiek die program-data independence en program-operation independence toelaat, wordt de \textbf{data abstraction} genoemd. Een \textbf{data model} is een soort van data abstraction die voor een \textit{conceptual representation} van de data zorgt.
+
+\subsection{Support of Multiple Views of the Data}
+Een database heeft vaak meerdere gebruikers die eventueel een ander zicht (\textit{view}) willen op de database. Een view kan een subset van de database zijn maar het kan ook zelf virtuele data bevatten die afgeleid is van de data in de database maar er niet opgeslagen is. 
+
+\subsection{Sharing of Data and Multiuser Transaction Processing}
+Een multiuser DBMS moet toelaten dat meerdere gebruikers tegelijkertijd toegang hebben tot de database. Hiervoor moet de DBMS over \textbf{concurrency control} software beschikken om te verzekeren dat het updaten van data door meerdere gebruikers correct verloopt zodat ook het resultaat hiervan correct is.
+
+Een \textbf{transactie} is een uitvoerend programma of proces dat \'e\'en of meerdere database accesses omvat. De \textbf{isolation}-eigenschap verzekert dat elke transactie uitgevoerd wordt, afgezonderd van andere transacties. De \textbf{atomicity}-eigenschap verzekert dat alle transacties ofwel volledig uitgevoerd worden, ofwel niet uitgevoerd worden.
+
+
+\newpage
+\section{Actors on the Scene}
+\textit{Actors on the scene} zijn de personen die dagelijks een grote database gebruiken.
+
+\subsection{Database Administrators}
+Er is nood aan een chief administrator, we noemen deze de \textbf{database administrator} (DBA). Hij is verantwoordelijk voor autorisatie, co\"ordinatie, monitoring en de software en hardware resources.
+
+Hij is ook de persoon die verantwoordelijk gesteld kan worden voor problemen zoals veiligheidslekken en een slechte responstijd van het systeem.
+
+\subsection{Database Designers}
+\textbf{Database designers} zijn de personen die verantwoordelijk zijn voor het identificeren van de data die opgeslagen moet worden op de database en voor het kiezen van de juiste datastructuren om deze op te slagen data voor te stellen in de database.
+
+\subsection{End Users}
+\textbf{Eindgebruikers} zijn de personen wiens job eruit bestaat een database te bevragen, up te daten en rapporten te maken. We kunnen ze onderverdelen in verschillende categorie\"en:
+\begin{itemize}
+\item \textit{Casual end users} hebben de database occasioneel nodig en hebben mogelijk elke keer andere gegevens nodig.
+\item \textit{Naive} of \textit{parametric end users} bevragen en updaten de database constant.
+\item \textit{Sophisticated end users} (zoals ingenieurs of wetenschappers) kennen de eigenschappen en mogelijkheden van de database zeer goed zodat ze hun eigen applicaties kunnen implementeren.
+\item \textit{Standalone users} hebben meestal een persoonlijke database.
+\end{itemize}
+
+\subsection{System Analysts and Application Programmers (Software Engineers)}
+\textbf{System analysts} bepalen de eisen van de eindgebruiker en ontwerpen de specificaties voor alleenstaande transacties die voldoen aan deze eisen. \textbf{Application programmers} implementeren deze specificaties als programma's die ze testen, debuggen en documenteren.
+
+
+\section{Workers behind the Scene}
+Dit stuk gaat over de mensen die de DBMS software en system environment ontwerpen, ontwikkelen en de operaties ervan uitschrijven. Ze zijn meestal niet ge\"interesseerd in de inhoud van de database.
+\begin{itemize}
+\item \textit{DBMS system designers} en \textit{implementers} ontwerpen en implementeren de DBMS modules en interfaces als een softwarepakket.
+\item \textit{Tool developers} ontwerpen en implementeren tools. Tools zijn optionele pakketten die vaak apart aangekocht kunnen worden.
+\item \textit{Operators} en \textit{maintenance personnel} is het \textit{system administration personnel}. Ze zijn verantwoordelijk voor het runnen en het onderhoud van de hardware en software environment.
+\end{itemize}
+
+
+\section{Advantages of Using the DBMS Approach}
+\subsection{Controlling Redundancy}
+De redundantie is het meermaals opslaan van dezelfde data, dit leidt tot verschillende problemen.
+\begin{itemize}
+\item Een simpele update moet meerdere malen uitgevoerd worden, dit is \textit{duplication of effort}.
+\item Opslagruimte wordt verspilt.
+\item Bestanden die dezelfde data voorstellen kunnen inconsistent worden omdat een update niet wordt doorgevoerd op alle bestanden.
+\end{itemize}
+We moeten een database hebben die elk \textit{logical data item} (bv. naam en geboortedatum) opslaat op \'e\'en enkele plaats in de database, dit heet \textbf{data normalization}.
+
+Soms is er echter nood aan \textit{gecontroleerde redundantie}. Dit komt voor indien we alle data die vaak samen opgevraagd wordt, in 1 bestand plaatsen. Hierdoor moet er bij een query slechts 1 bestand doorzocht worden i.p.v. meerdere. Dit heet \textbf{denormalization}.
+
+\subsection{Restricting Unauthorized Access}
+Als meerdere gebruikers een grote database delen, is het logisch dat niet iedereen toegang heeft tot alle data. Een DBMS moet een \textbf{security and authorization subsystem} bevatten, waarmee de DBA accounts kan aanmaken en restricties kan opleggen. 
+
+\subsection{Providing Persistent Storage for Program Objects}
+Databases kunnen gebruikt worden om persistente opslag voor programma-objecten en datastructuren aan te bieden. Dit is \'e\'en van de redenen voor \textbf{object-oriented database systems}. Een complex object in C++ kan permanent opgeslagen worden in een object-geori\"enteerd DBMS. Zo een object noemen we \textit{persistent}, omdat het de be\"eindiging van het programma overleeft en later direct kan teruggevonden worden.
+
+\subsection{Providing Storage Structures and Search Techniques for Efficient Query Processing}
+Databasesystemen moeten de mogelijkheid hebben tot het effici\"ent uitvoeren van query's en updates. Omdat een database vaak is opgeslagen op een disk, moet de DBMS speciale datastructuren en technieken voorzien om de \textit{seektime} te versnellen. Een oplossing hiervoor is werken met indexering. Een DBMS biedt vaak \textit{buffering} of \textit{caching modules} aan, die bijgehouden worden in het hoofdgeheugen. De \textbf{query processing and optimization module} is verantwoordelijk voor het kiezen van een effici\"ent query-uitvoeringsplan voor elke query, gebaseerd op de huidige opslagstructuur.
+
+\subsection{Providing Backup and Recovery}
+Een DBMS moet de mogelijkheid bezitten om te herstellen van hardware- of softwarefouten. Het \textbf{backup and recovery subsystem} van de DBMS is verantwoordelijk voor het herstel. Het moet kunnen herstellen, hervatten of een backup maken.
+
+\subsection{Providing Multiple User Interfaces}
+Dit omvat query-talen voor casual users, \textit{programming language interfaces} voor application programmers, formulieren en commando's voor parametric users en menu-gestuurde interfaces en \textit{natural language interfaces} voor standalone users. Vaak in combinatie met een GUI.
+
+\subsection{Representing Complex Relationships among Data}
+Een DBMS moet de mogelijkheid bieden om complexe relaties tussen data voor te stellen, evenals de mogelijkheid om nieuwe relaties te defini\"eren en gerelateerde data snel en effici\"ent terug te vinden.
+
+\subsection{Enforcing Integrity Constraints}
+De meeste database applications hebben bepaalde \textbf{integrity constraints} die moeten gelden voor de data. Een DBMS moet de mogelijkheid bieden om constraints te defini\"eren en ze te handhaven.
+
+\subsection{Permitting Inferencing and Actions Using Rules}
+Sommige databasesystemen hebben de mogelijkheid om informatie af te leiden uit reeds bestaande data. Zulke systemen noemen we \textbf{deductive database systems}. In moderne databases bestaat de mogelijkheid om \textit{triggers} te associ\"eren met tabellen. Een trigger is een soort regel die toegepast wordt bij een update op een tabel, wat resulteert in het uitvoeren van extra operaties zoals het sturen van een boodschap. Nog sterker zijn \textbf{active database systems}, deze leveren actieve regels die automatisch acties uitvoeren wanneer bepaalde gebeurtenissen of condities voorkomen.
+
+\subsection{Additional Implications of Using the Database Approach}
+\begin{itemize}
+\item \textit{Potential for Enforcing Standards}: de DBA wordt toegelaten om een bepaalde standaard te defini\"eren voor de users.
+\item \textit{Reduced Application Development Time}: eens een database is opgezet en runt, is er minder tijd nodig om een nieuwe applicatie te ontwikkelen, gebruikmakend van de DBMS mogelijkheden.
+\item \textit{Flexibility}: moderne DBMS'en laten verschillende soorten van evolutionaire veranderingen toe in de structuur van de database zonder invloed op de opgeslagen data of applicaties.
+\item \textit{Availability of Up-to-Date information}: vanaf het moment dat een gebruiker bepaalde data heeft ge\"updatet, moeten deze wijzigingen zichtbaar zijn voor andere gebruikers. 
+\item \textit{Economies of Scale}: systemen kunnen gedeeld worden om overlappingen te voorkomen op verschillende niveaus.
+\end{itemize}
+
+
+\setcounter{section}{7}
+\section{When Not to Use a DBMS}
+Er zijn bepaalde situaties waarbij het gebruik van een DBMS een onnodige overhead kan veroorzaken, wat niet zou voorkomen bij het traditionele file processing. De overhead van een DBMS kan volgende oorzaken hebben:
+\begin{itemize}
+\item Te hoge initi\"ele kosten voor hardware, software en training
+\item De algemeenheid van een DBMS
+\item Overhead voor het leveren van security, concurrency en recovery
+\end{itemize}

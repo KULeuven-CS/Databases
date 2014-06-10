@@ -1,0 +1,111 @@
+\chapter{SQL Web Programming Using C PHP}
+\section{A Simple PHP Example}
+PHP is een \textbf{general-purpose scripting language}, geschreven in C. PHP is vooral goed voor het aanpassen en manipuleren van tekstpagina's en dynamische HTML-pagina's.
+
+PHP loopt op de \textbf{middle-tier web server} waar PHP-commando's de HTML-files zullen manipuleren om de dynamische pagina's te maken. De gegenereerde HTML-pagina wordt dan naar de \textbf{client tier} verzonden. Het DBMS bevindt zich op de \textbf{bottom-tier database server}.
+
+\textit{Zie pagina \textbf{469-470} voor een voorbeeld van PHP.}
+
+
+
+\section{Overview of Basic Features of PHP}
+\subsection{PHP Variables, Data Types, and Programming Constructs}
+In PHP worden namen voor variabelen voorafgegaan met het \$-teken. In de naam van een variabele mogen letters, cijfers en het underscore-teken (\_) voorkomen. De namen zijn \textit{case sensitive} en het eerste karakter mag geen cijfer zijn. De waarde die aan een variabele wordt toegekend, bepaalt wat voor type deze variabele is. Het type kan dus bij een nieuwe toekenning veranderen.
+
+In PHP zijn er veel manieren om strings te processen. Hier volgen de drie meest gebruikte manieren om strings en tekst uit te drukken.
+\begin{itemize}
+	\item \textbf{Single-quoted strings.} Bijvoorbeeld \texttt{\$var = `wereld!'}.
+	\item \textbf{Double-quoted strings.} Hierin worden variabelen omgezet naar de waarde die ze op dat moment hebben (bv. \texttt{``Hallo \$var''}). De herkenning van deze variabele door de interpreter wordt \textbf{interpolating variables} genoemd. Dit gebeurt niet bij single-quoted strings.
+	\item \textbf{Here documents.} Dit wordt gebruikt om lange teksten toe te kennen aan een variabele. Men begint met het schrijven van \texttt{<<<DOCNAME}, hierna volgt de eigenlijke tekst die opgeslagen wordt in een variabele. Het einde van de tekst wordt aangeduid met het codewoord (in dit geval \texttt{DOCNAME}) op een lege regel. De variabelen worden hier ook ge\"interpoleerd.
+\end{itemize}
+Single-quoted strings worden gebruikt als er geen variabelen in de string voorkomen, anders worden double-quoted strings of here documents gebruikt.
+
+Om strings aan elkaar te plakken, wordt de period-operator (\texttt{.}) gebruikt.
+
+~
+
+\noindent In PHP bestaan uiteraard ook integers en floating point getallen, ook de Booleaanse variabele bestaat. For-lussen, while-lussen en if-statements bestaan ook.
+
+
+\subsection{PHP Arrays}
+Arrays zijn belangrijk in PHP omdat ze lijsten van elementen toelaten. Een 1-dimensionale array kan gebruikt worden voor een lijst van keuzes. Bij 2-dimensionale arrays wordt de eerste dimensie gebruikt als de rijen van een tabel en de tweede dimensie als de kolommen (attributen) per rij.
+
+Een \textbf{numerische array} associeert een index (startend met 0) met elk element.
+
+\vspace{1mm}\hspace{10mm}
+\texttt{\$fruit1 = array (`appel', `banaan', `aardbei');}
+\vspace{3mm}
+
+\noindent Een \textbf{associatieve array} voorziet elementparen (\textit{key} $\Rightarrow$ \textit{value}). Hierbij wordt een element opgeroepen via de key, alle keys moeten dus uniek zijn.
+
+\vspace{1mm}\hspace{10mm}
+\texttt{\$fruit2 = array (`F1' => `appel', `F2' => `banaan', `F3' => `aardbei');}
+\vspace{3mm}
+
+\noindent Als er geen keys worden gegeven bij het aanmaken van een array, worden de keys automatisch numerisch. Beide soorten arrays hebben geen limiet op de grootte. Arrays kunnen doorlopen worden via een foreach-loop of via een for-loop.
+
+
+
+
+\subsection{PHP Functions}
+Het defini\"eren van functies en het oproepen van functies werkt hetzelfde als in Java.
+\begin{itemize}
+	\item De argumenten van de functies zijn \textbf{passed by value}. De meegegeven waarden worden dus `gekopi\"eerd' naar de functie-argumenten wanneer de functie wordt opgeroepen.
+ 
+	\item Return values van een functie worden achter het keyword \texttt{return} gegeven. Een functie kan eender welk type variabele teruggeven.
+ 
+	\item De regels voor variabelen in PHP zijn analoog aan de regels in andere programmeertalen. Globale variabelen buiten de functie kunnen niet gebruikt worden in deze functie, tenzij ze gerefereerd worden met de speciale array \texttt{\$GLOBALS}. Bijvoorbeeld \texttt{\$GLOBALS[`abc']} zal de waarde opvragen van de globale variabele \texttt{\$abc} (gedefinieerd buiten de functie).
+\end{itemize}
+
+
+\subsection{PHP Server Variables and Forms}
+Er zijn een aantal built-in entries in de array \texttt{\$\_SERVER} die informatie kunnen geven over de server waar de interpreter op draait. Een aantal van deze entries zijn:
+\begin{itemize}
+	\item \texttt{\$\_SERVER[`SERVER\_NAME']} geeft de website terug waarop de interpreter draait.
+	\item \texttt{\$\_SERVER[`REMOTE\_ADDRESS']} is het IP-adres van de computer die met de server communiceert (bv. \texttt{129.107.61.8}).
+	\item \texttt{\$\_SERVER[`REMOTE\_HOST']} is de websitenaam van de client computer (bv. \texttt{wiki.wina.be}).
+	\item \texttt{\$\_SERVER[`PATH\_INFO']} is het deel van de URL dat na de slash komt, achteraan de URL.
+	\item \texttt{\$\_SERVER[`QUERY\_STRING']} geeft de string terug die in de URL achter het vraagteken staat. In deze string kunnen variabelen en waarden meegegeven worden.
+	\item \texttt{\$\_SERVER[`DOCUMENT\_ROOT']} is de root directory waar de files op de server staan, deze files zijn beschikbaar voor client users.
+\end{itemize}
+
+\noindent Een andere built-in array is \texttt{\$\_POST}, deze is ook automatisch globaal. \texttt{\$\_POST} maakt het mogelijk voor de programmeur om inputwaarden (gegeven door de user) binnen te krijgen. De keys in deze array zijn de namen van de inputparameters.
+
+
+
+\section{Overview of PHP Database Programming}
+Er bestaan veel libraries voor PHP met daarin handige functies, deze worden gegroepeerd in \textbf{PEAR} (PHP Extension and Application Repository). De PEAR DB library geeft functies voor toegang tot een database, hiermee kunnen verschillende databases worden aangesproken (bv. MySQL).
+
+
+\subsection{Connecting to a Database}
+Om de databasefuncties te kunnen gebruiken, moet eerst de PEAR DB library module ingeladen worden. Daarna kan men met een database verbinden via \texttt{\$d = DB::connect(`string');} waarbij \texttt{string} de informatie over de database voorstelt.
+
+In principe kunnen nu de meeste SQL commando's doorgegeven worden aan de verbonden database via de query functie. De functie \texttt{\$q = \$d->query(`query');} neemt een SQL-commando als string en geeft deze door aan de database voor uitvoering. Als de database iets teruggeeft, wordt dit resultaat bijgehouden in een query-variabele (in dit voorbeeld \texttt{\$q}).
+
+~
+
+\noindent \textit{Zie pagina \textbf{477-479} voor een duidelijk en uitgewerkt voorbeeld.}
+
+
+\subsection{Collecting Data from Forms and Inserting Records}
+Het is gebruikelijk in database-applicaties om informatie te verzamelen met HTML. Bijvoorbeeld, bij het bestellen van een ticket wordt persoonlijke informatie ingevoerd en dan bijgehouden in een database record op een database server. Bij zo'n toepassingen wordt de variabele \texttt{\$\_POST} gebruikt, hierboven al beschreven.
+
+Omdat er met het \texttt{INSERT} commando `slechte' strings kunnen worden meegegeven, kan men beter de veiligere \textbf{placeholders} gebruiken (met het \texttt{?}-symbool).
+
+~
+
+\noindent \textit{Zie pagina \textbf{479-480} voor een duidelijk en uitgewerkt voorbeeld.}
+
+
+\subsection{Retrieval Queries from Database Tables}
+We geven 3 voorbeelden van \textbf{retrieval queries} de resultaten te interpreteren.
+
+\begin{itemize}
+	\item \textbf{While-loop.} Een \textit{while}-loop overloopt elke rij in het resultaat. De functie \texttt{\$q->fetchrow()} haalt de volgende record in het resultaat binnen. De loop start bij het eerste record.
+
+	\item \textbf{Dynamic query.} De condities in deze query zijn gebaseerd op wat de user ingeeft, op basis van deze condities wordt bepaald welke rijen geselecteerd worden. Omdat deze query dus sterk afhangt van de input gegeven door de user, worden hier best placeholders gebruikt.
+
+	\item \textbf{\texttt{getAll()} query.} Deze methode geeft een andere manier voor een loop over de rijen van de query. De functie \texttt{\$q->getAll()} geeft alle records van de query terug in 1 enkele variabele. Een \textit{foreach}-loop kan gebruikt worden om te itereren over de individuele records.
+\end{itemize}
+
+\noindent \textit{Zie pagina \textbf{480-481} voor een duidelijk en uitgewerkt voorbeeld.}

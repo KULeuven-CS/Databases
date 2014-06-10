@@ -1,0 +1,63 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[latin1]{inputenc}
+\usepackage[dutch]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{mathrsfs}
+\usepackage{subfiles}
+
+\topmargin -1in
+\textheight 10in
+\textwidth 7.0in
+\oddsidemargin -0.3in
+
+\def\ojoin{\setbox0=\hbox{$\bowtie$}%
+  \rule[-.02ex]{.25em}{.4pt}\llap{\rule[\ht0]{.25em}{.4pt}}}
+\def\leftouterjoin{\mathbin{\ojoin\mkern-5.8mu\bowtie}}
+\def\rightouterjoin{\mathbin{\bowtie\mkern-5.8mu\ojoin}}
+\def\fullouterjoin{\mathbin{\ojoin\mkern-5.8mu\bowtie\mkern-5.8mu\ojoin}}
+
+\title{Databases Samenvatting}
+\date{\today}
+\author{
+	Dieter Castel \\
+	Jonas Devlieghere \\
+	Karel Domin \\
+	Giel Dops \\
+	Dennis Frett \\
+	Kevin Fockaert \\
+	Kenneth Geets \\
+	John Gybels \\
+	Laurent Janssens \\
+	Ben Lefevere
+}
+
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\subfile{subfiles/chapter1.tex}
+\subfile{subfiles/chapter2.tex}
+\subfile{subfiles/chapter3.tex}
+\subfile{subfiles/chapter4.tex}
+\subfile{subfiles/chapter5.tex}
+\subfile{subfiles/chapter6.tex}
+\subfile{subfiles/chapter7.tex}
+\subfile{subfiles/chapter8.tex}
+\setcounter{chapter}{11}
+\subfile{subfiles/chapter12.tex}
+\subfile{subfiles/chapter13.tex}
+\subfile{subfiles/chapter14.tex}
+\subfile{subfiles/chapter15.tex}
+\subfile{subfiles/chapter16.tex}
+\subfile{subfiles/chapter17.tex}
+\subfile{subfiles/chapter18.tex}
+\setcounter{chapter}{19}
+\subfile{subfiles/chapter20.tex}
+\subfile{subfiles/chapter21.tex}
+\subfile{subfiles/chapter22.tex}
+
+\end{document}

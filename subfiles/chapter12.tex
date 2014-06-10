@@ -1,0 +1,31 @@
+\chapter{SQL Application Programming Using C and Java}
+\section{Database Programming: Techniques and Issues}
+Hoewel de meeste databasesystemen \textit{interactive interfaces} hebben om direct SQL-commando's in uit te voeren, wordt bij de meeste database-interacties toch meestal een \textbf{applicatieprogramma} of \textbf{database-applicatie} gebruikt. 
+
+\subsection{Approaches to Database Programming}
+\begin{itemize}
+	\item \textbf{Embedding database commands in a general-purpose programming language}\\
+	Database statements zijn ingebouwd in de programmeertaal zelf. Een precompiler of preprocessor zoekt deze dan in de programmacode en vervangt de statements in het programma door functie-aanroepen naar de DBMS-gegenereerde code. Deze techniek heet \textbf{embedded SQL}.
+	\item \textbf{Using a library of database functions}\\
+	Voor een bepaalde programmeertaal bestaat een bibliotheek met functies die toegang verschaffen tot de database. De resultaten van die functie worden dan beschikbaar gesteld aan het programma in een \textbf{API} (application programming interface).
+	\item \textbf{Designing a brand-new language}\\
+	Een volledig nieuwe database-programmeertaal wordt ontwikkeld die compatibel is met het gegevensmodel en de querytaal. Dit wordt weinig toegepast in de praktijk.
+\end{itemize}
+
+\subsection{Impedance Mismatch}
+De term \textbf{impedance mismatch} wordt gebruikt om het probleem aan de duiden tussen het verschil van de database en de programmeertaal. 
+Voor verschillende programmeertalen moeten \textbf{bindings} ontworpen worden om de verschillen tussen het gegevensmodel en het model van de programmeertaal te overbruggen.
+
+Een binding definieert de overeenkomsten van de attribuuttypes (bv. \textit{varchar}) met de datatypes van de programmeertaal (bv. \textit{string}).
+
+Zo'n binding moet ook het resultaat van een query (verzameling van tupels) aan een datastructuur in het programma koppelen. Omdat een voorstelling in een tabelstructuur in een programmeertaal vaak onmogelijk is, worden de tupels 1 voor 1 geanalyseerd (met een \textbf{iterator}).
+
+Deze problemen worden geminimaliseerd als de programmeertaal hetzelfde model gebruikt als de database (zoals Oracle's PL/SQL). 
+
+\subsection{Typical Sequence of Interaction in Database Programming}
+Een \textbf{client program} kan verbinding maken met 1 of meer \textbf{databaseservers}.
+\begin{enumerate}
+	\item Het programma opent een \textit{connection} met de databaseserver (met een adres van de server en eventueel een loginnaam en een paswoord).
+	\item Er is \textit{interactie} tussen het programma en de database: de database levert resultaten van queries die het programma naar de database stuurt.
+	\item De verbinding met de database wordt \textit{gesloten}.
+\end{enumerate}

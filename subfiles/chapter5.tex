@@ -1,0 +1,390 @@
+\chapter{SQL: Advanced Queries, Assertions, Triggers, and Views}
+\section{More Complex SQL Retrieval Queries}
+\subsection{Comparisons Involving NULL and Three-Valued Logic}
+In SQL kan \texttt{NULL} 3 verschillende betekenissen hebben:
+\begin{enumerate}
+\item \textbf{Unknown value.} Een veld dat leeggelaten wordt (bv. de geboortedatum niet invullen).
+\item \textbf{Unavailable or withheld value.} Data die verborgen gehouden wordt (bv. een persoon heeft een telefoon, maar wil zijn nummer niet geven om persoonlijke redenen).
+\item \textbf{Not applicable attribute.} Data die niet van toepassing is (bv. een \textit{diploma}-veld voor een persoon die geen studies voltooid heeft).
+\end{enumerate}
+Omdat het vaak niet mogelijk is om te achterhalen over welk type \texttt{NULL} het gaat, gaat men in SQL ervan uit dat elke \texttt{NULL}-waarde anders is dan elke andere \texttt{NULL}-waarde. Als men een vergelijking (bv. \textbf{AND}, \textbf{OR} en \textbf{NOT}) uitvoert met een \texttt{NULL}-waarde, kan de juiste uitkomst zowel \texttt{TRUE} als \texttt{FALSE} zijn. Daarom wordt de uitkomst van zo'n vergelijking altijd met \texttt{UNKNOWN} aangeduid. SQL gebruikt dus \textbf{three-valued logic} in plaats van de standaard \textbf{Boolean logic} (\textit{two-valued}).
+
+\textit{Tabel 5.1 op pagina \textbf{112} toont alle mogelijke uitkomsten in deze logica.}
+
+De algemene regel is dat in \textit{select-project-join} queries enkel de combinaties van tupels die evalueren naar \texttt{TRUE} geselecteerd worden. Combinaties van tupels die evalueren naar \texttt{FALSE} of \texttt{UNKNOWN} worden dus niet geselecteerd. De uitzonderingen op deze regel zien we in 5.1.6.
+
+SQL laat queries toe om na te gaan of een bepaalde waarde NULL is. In plaats van de gewone vergelijkingsoperatoren, gebruikt men \textbf{IS} of \textbf{IS NOT}.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{WHERE} \textit{Super\_ssn} \textbf{IS NOT} \texttt{NULL};
+
+
+\subsection{Nested Queries, Tuples, and Set/Multiset Comparisons}
+Voor sommige queries is het nodig dat er bepaalde waarden uit de database gehaald worden die dan gebruikt worden in een vergelijkingsconditie. Dit soort queries kan in SQL makkelijk geformuleerd worden met zogenaamde \textbf{nested queries}. Dit zijn volledige \textit{select-from-where} blokken binnen de \textbf{WHERE}-clausule van een andere query (de \textbf{outer query}).
+
+We introduceren ook de vergelijkingsoperator \textbf{IN}, hiermee kan een waarde vergeleken worden met een \textit{set} (verzameling) van waarden. De operator evalueert naar \texttt{TRUE} als het element een onderdeel is van de verzameling.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT DISTINCT} \textit{Pnumber}
+
+\hspace{10mm}
+\textbf{FROM} PROJECT
+
+\hspace{10mm}
+\textbf{WHERE} \textit{Pnumber} \textbf{IN} ({\textless}\textit{select-from-where block}{\textgreater});
+\vspace{3mm}
+
+\noindent Je kan ook tupels van waarden vergelijken door ze binnen haakjes te zetten. Bijvoorbeeld: de volgende query selecteert alle werknemers die werken aan een project met dezelfde (project, uren)-combinatie als werknemer 123456789 aan dat project werkt.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT DISTINCT} \textit{Essn}
+
+\hspace{10mm}
+\textbf{FROM} WORKS\_ON
+
+\hspace{10mm}
+\textbf{WHERE} (\textit{Pno}, \textit{Hours}) \textbf{IN}
+
+\hspace{40mm}
+( \textbf{SELECT} \textit{Pno}, \textit{Hours}
+
+\hspace{40mm}
+\phantom{(} \textbf{FROM} WORKS\_ON
+
+\hspace{40mm}
+\phantom{(} \textbf{WHERE} $\textit{Essn} = \textit{`123456789'}$ );
+\vspace{3mm}
+
+\noindent Er zijn nog andere operatoren om een enkele waarden $v$ te vergelijken met een set of multiset. De `\textbf{= ANY}'-operator is in essentie hetzelfde als de \textbf{IN}-operator maar kan gecombineerd worden met de volgende operatoren: $>$, $>=$, $<$, $<=$ en $<>$.
+
+Het keyword \textbf{ALL} kan ook gecombineerd worden met deze operatoren. Zo kan men bijvoorbeeld de namen vragen van de werknemers die meer verdienen dan alle werknemers uit departement 5.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Fname}, \textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Salary} > \textbf{ALL}$
+
+\hspace{40mm}
+( \textbf{SELECT} \textit{Salary}
+
+\hspace{40mm}
+\phantom{(} \textbf{FROM} EMPLOYEE
+
+\hspace{40mm}
+\phantom{(} \textbf{WHERE} $\textit{Dno} = 5$ );
+
+
+\subsection{Correlated Nested Queries}
+Twee queries zijn \textbf{correlated} als de binnenste query afhankelijk is van de buitenste query. Dit is het geval als bijvoorbeeld de binnenste query refereert naar de buitenste query. De binnenste query moet voor iedere waarde van de buitenste query uitgevoerd worden.
+
+We kunnen de volgende query als volgt zien. Voor elke \textsc{employee}-tupel $e_k$: de binnenste query haalt de \textit{``Essn''}-waarden op van alle \textsc{dependent}-tupels met hetzelfde geslacht en dezelfde naam als $e_k$. Als de \textit{``Ssn''}-waarde van $e_k$ voorkomt in het resultaat van de binnenste query, selecteer die \textsc{employee}-tupel $e_k$ dan.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} E.\textit{Fname}, E.\textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E
+
+\hspace{10mm}
+\textbf{WHERE} E.\textit{Ssn} \textbf{IN}
+
+\hspace{40mm}
+( \textbf{SELECT} \textit{Essn}
+
+\hspace{40mm}
+\phantom{(} \textbf{FROM} DEPENDENT \textbf{AS} D
+
+\hspace{40mm}
+\phantom{(} \textbf{WHERE} $\text{E.\textit{Fname}} = \text{D.\textit{Dependent\_name}} \textbf{ AND } \text{E.\textit{Sex}} = \text{D.\textit{Sex}}$ );
+
+
+\subsection{The EXISTS and UNIQUE Functions in SQL}
+De \textbf{EXISTS}-functie wordt gebruikt om te kijken of het resultaat van een \textit{correlated nested query} leeg is of niet. De functie evalueert naar \texttt{TRUE} als als het resultaat van de nested query minstens 1 tuple bevat, anders naar \texttt{FALSE}. Er bestaat ook \textbf{NOT EXISTS}.
+
+De volgende query kan men als volgt zien. Voor elke \textsc{employee}-tupel $e_k$: haal alle \textsc{dependent}-tupels op die verwant zijn aan $e_k$. Als er geen gerelateerde \textsc{dependent}-tupels bestaan, zal $e_k$ geselecteerd niet worden, in het andere geval wel.
+
+\hspace{10mm}
+\textbf{SELECT} E.\textit{Fname}, E.\textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E
+
+\hspace{10mm}
+\textbf{WHERE EXISTS}
+
+\hspace{40mm}
+( \textbf{SELECT} *
+
+\hspace{40mm}
+\phantom{(} \textbf{FROM} DEPENDENT \textbf{AS} D
+
+\hspace{40mm}
+\phantom{(} \textbf{WHERE} $\text{E.\textit{Ssn}} = \text{D.\textit{Essn}}$ );
+\vspace{3mm}
+
+\noindent Het is ook mogelijk om het verschil van twee verzamelingen te nemen, hiervoor gebruiken we de \textbf{EXCEPT}-operator. Voor een voorbeeld verwijzen we naar query Q3A op pagina \textbf{117}.
+
+De \textbf{UNIQUE($Q$)}-operator evalueert naar \texttt{TRUE} als er geen duplicaten voorkomen in het resultaat van de query $Q$, in het andere geval \texttt{FALSE}. Deze operator kan gebruikt worden om te testen of het resultaat van een geneste queryeen set of een multiset is.
+
+
+\subsection{Explicit Sets and Renaming of Attributes in SQL}
+In plaats van een nested query te gebruiken in de \textbf{WHERE}-clausule, is het ook mogelijk om zelf een expliciete set van waarden te defini\"eren. Bijvoorbeeld: de volgende query vraagt de \textit{``Essn''}-waarden op van alle werknemers die werken aan project 1, 2 of 3.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT DISTINCT} \textit{Essn}
+
+\hspace{10mm}
+\textbf{FROM} WORKS\_ON
+
+\hspace{10mm}
+\textbf{WHERE} \textit{Pno} \textbf{IN} (1, 2, 3);
+\vspace{3mm}
+
+\noindent Het is ook mogelijk om attributen in het resultaat te hernoemen met de \textbf{AS}-operator.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} E.\textit{Lname} \textbf{AS} \textit{Employee\_name}, S.\textit{Lname} \textbf{AS} \textit{Supervisor\_name}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E, EMPLOYEE \textbf{AS} S
+
+\hspace{10mm}
+\textbf{WHERE} $\text{E.\textit{Super\_ssn}} = \text{S.\textit{Ssn}}$;
+
+
+\subsection{Joined Tables in SQL and Outer Joins}
+Het concept van \textbf{joined tables} wordt gebruikt om te vermijden dat een gebruiker zeer veel `$=$' moet gebruiken in de \textbf{WHERE}-clausule.
+
+Bijvoorbeeld: we willen de namen van alle werknemers opvragen die voor het onderzoeksdepartement werken. De conditie $(\textit{Dno} = \textit{Dnumber})$ zorgt ervoor dat enkel zinvolle tupels gegenereerd worden met de \textbf{JOIN}-operator.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Fname}, \textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} ( EMPLOYEE \textbf{JOIN} DEPARTMENT \textbf{ON} $\textit{Dno} = \textit{Dnumber}$ )
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Dname} = \textit{`Research'}$;
+\vspace{3mm}
+
+\noindent We kunnen ook gebruik maken van \textbf{NATURAL JOIN} om tabellen samen te voegen. Hierbij wordt er geen conditie meegegeven maar wordt er gejoind op elk paar attributen met dezelfde naam. Als de naam van de attributen waarop we willen joinen niet overeenkomen, kunnen we de \textbf{AS}-operator gebruiken om ze te hernoemen.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Fname}, \textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} ( EMPLOYEE \textbf{NATURAL JOIN}
+
+\hspace{40mm}
+DEPARTMENT \textbf{AS} DEPT(\textit{Dname}, \textit{Dno}, \textit{Mssn}, \textit{Msdate})
+
+\hspace{10mm}
+\phantom{\textbf{FROM}} )
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Dname} = \textit{`Research'}$;
+\vspace{3mm}
+
+\noindent Standaard wordt er gejoind met een \textbf{inner join}, hiertegenover staat een \textbf{outer join}. Voor meer uitleg, zie hoofdstuk 6.
+
+Het is ook toegelaten om joins te nesten, dit noemen we een \textbf{multiway join}.
+
+
+\subsection{Aggregate Functions in SQL}
+Aggregaatfuncties laten toe om tupels in een resultaat samen te vatten. De ingebouwde aggregaatfuncties zijn \textbf{COUNT}, \textbf{SUM}, \textbf{MAX}, \textbf{MIN} en \textbf{AVG}.
+
+De \textbf{COUNT}-functie telt het aantal tupels die een bepaalde conditie voldoen en geeft dit aantal terug als resultaat. Bijvoorbeeld: de volgende query geeft het aantal werknemers terug.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT COUNT} (*)
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE;
+\vspace{3mm}
+
+\noindent De volgende query geeft als resultaat het aantal unieke lonen uit de \textsc{employee}-relatie.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT COUNT} (\textbf{DISTINCT} \textit{Salary})
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE;
+\vspace{3mm}
+
+\noindent \textbf{COUNT} kan ook bij de \textbf{WHERE}-clausule gebruikt worden om bijvoorbeeld werknemers op te vragen die 2 of meer dependents hebben.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} E.\textit{Fname}, E.\textit{Lname}
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE \textbf{AS} E
+
+\hspace{10mm}
+\textbf{WHERE} ( \textbf{SELECT COUNT} (*)
+
+\hspace{10mm}
+\phantom{\textbf{WHERE} (} \textbf{FROM} DEPENDENT \textbf{AS} D
+
+\hspace{10mm}
+\phantom{\textbf{WHERE} (} \textbf{WHERE} $\text{E.\textit{Ssn}} = \text{D.\textit{Essn}}$ ) $>= 2$;
+\vspace{3mm}
+
+\noindent Op deze manier kunnen ook de andere aggregaatfuncties gebruikt worden.
+
+
+\subsection{Grouping: The GROUP BY and HAVING Clauses}
+We willen vaak aggregaatfuncties toepassen op bepaalde groepen van tupels waarbij de groepen gedefinieerd worden door een bepaald attribuut. Het attribuut waarop gegroepeerd moet worden, duiden we aan met \textbf{GROUP BY}. Als er \texttt{NULL}-waarden voorkomen in het attribuut waarop gegroepeerd wordt, zal er voor deze tupels een aparte groep gemaakt worden.
+
+Bijvoorbeeld: we willen voor elk departement het departementsnummer, het aantal werknemers en hun gemiddeld loon opvragen. We nemen als groep `alle werknemers met hetzelfde departementsnummer'. Figuur 5.1a op pagina \textbf{123} is een visualisatie van deze query.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Dno}, \textbf{COUNT} (*), \textbf{AVG} (\textit{Salary})
+
+\hspace{10mm}
+\textbf{FROM} EMPLOYEE
+
+\hspace{10mm}
+\textbf{GROUP BY} \textit{Dno}
+\vspace{3mm}
+
+\noindent Soms willen we enkel informatie over groepen die voldoen aan een bepaalde voorwaarde, hiervoor kunnen we de clausule \textbf{HAVING} gebruiken.
+
+Het verschil tussen \textbf{HAVING} en een conditie opleggen in \textbf{WHERE} is dat we bij de \textbf{HAVING}-clausule een conditie kunnen opleggen voor een volledige groep tupels. De \textbf{WHERE}-clausule daarentegen kan enkel condities opleggen aan individuele tupels.
+
+Bijvoorbeeld: we willen van elk project \textit{met meer dan 2 werknemers} het projectnummer, de projectnaam en het aantal werknemers opvragen.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{SELECT} \textit{Pnumber}, \textit{Pname}, \textbf{COUNT} (*)
+
+\hspace{10mm}
+\textbf{FROM} PROJECT, WORKS\_ON
+
+\hspace{10mm}
+\textbf{WHERE} $\textit{Pnumber} = \textit{Pno}$
+
+\hspace{10mm}
+\textbf{GROUP BY} \textit{Pnumber}, \textit{Pname}
+
+\hspace{10mm}
+\textbf{HAVING COUNT} $\text{(*)} > 2$;
+
+
+
+\section{Specifying Constraints as Assertions and Actions as Triggers}
+\subsection{Specifying General Constraints as Assertions in SQL}
+\textbf{CREATE ASSERTION} wordt gebruikt om extra constraints op te leggen, naast de restricties op tabellen of attribuutwaarden (die bij het aanmaken van een tabel gecre\"eerd worden). Elke latere wijziging in de gegevensbank wordt slechts toegelaten als er aan de assertie voldaan is.
+
+Bijvoorbeeld: we willen opleggen dat een werknemer nooit meer kan verdienen dan zijn manager.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CREATE ASSERTION} SALARY\_CONSTRAINT
+
+\hspace{10mm}
+\textbf{CHECK (}
+
+\hspace{20mm}
+\textbf{NOT EXISTS} (
+
+\hspace{45mm}
+\textbf{SELECT} *
+
+\hspace{45mm}
+\textbf{FROM} EMPLOYEE E, EMPLOYEE M, DEPARTMENT D
+
+\hspace{45mm}
+\textbf{WHERE} $\textit{E.\textit{Salary}} > \textit{M.\textit{Salary}}$
+
+\hspace{45mm}
+\phantom{\textbf{WHERE}} \textbf{AND} $\textit{E.\textit{Dno}} > \textit{D.\textit{Dnumber}}$
+
+\hspace{45mm}
+\phantom{\textbf{WHERE}} \textbf{AND} $\textit{D.\textit{Mgr\_ssn}} > \textit{M.\textit{Ssn}}$
+
+\hspace{20mm}
+\phantom{\textbf{NOT EXISTS}} )
+
+\hspace{10mm}
+\phantom{\textbf{CHECK}} \textbf{)};
+
+
+\subsection{Introduction to Triggers in SQL}
+Bij \textbf{CREATE TRIGGER} wordt er een actie opgegeven die ondernomen zal worden als er niet aan een bepaalde voorwaarde is voldaan. Triggers zullen dus een database \textbf{monitoren}. Een typische trigger bevat de volgende elementen:
+\begin{itemize}
+\item Een \textbf{event} die bepaalt wanneer een conditie gecheckt moet worden (meestal bij een update).
+\item De \textbf{conditie} die bepaalt wanneer een actie uitgevoerd moet worden.
+\item De \textbf{actie} zelf, dit is een SQL-query of een extern programma.
+\end{itemize}
+\textit{Voor een voorbeeld van een trigger, zie R5 op pagina \textbf{128-129}.}
+
+
+\section{Views (Virtual Tables) in SQL}
+\subsection{Concept of a View in SQL}
+Een \textbf{view} is een tabel die afgeleid wordt uit andere tabellen, de tupels van een view worden niet expliciet opgeslagen. De \textbf{defini\"erende tabellen} kunnen `echte' tabellen of ook views zijn. Een view is enkel \textit{virtueel} en wordt niet \textit{gematerialiseerd}.
+
+Views zijn handig als beveiligingsmechanisme, een gebruiker krijgt maar zicht op een deel van de database. Er is ook geen redundantie doordat er geen nieuwe (expliciete) tabellen gemaakt worden.
+
+
+\subsection{Specification of Views in SQL}
+Men kan een view aanmaken met \textbf{CREATE VIEW}. Een view heeft een bepaalde naam, een attributenlijst en een query om aan deze attributen te geraken. Na het aanmaken van een view kan men hierop queries uitvoeren alsof het een echte tabel was.
+
+Een view wordt verwijderd met het commando \textbf{DROP VIEW}.
+
+\noindent Bijvoorbeeld: we willen een view hebben van alle werknemers die aan een project werken.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{CREATE VIEW} WORKS\_ON\_1
+
+\hspace{10mm}
+\textbf{AS $\qquad$ SELECT} \textit{Fname}, \textit{Lname}, \textit{Pname}, \textit{Hours}
+
+\hspace{10mm}
+\phantom{\textbf{AS $\qquad$}} \textbf{FROM} EMPLOYEE, PROJECT, WORKS\_ON
+
+\hspace{10mm}
+\phantom{\textbf{AS $\qquad$}} \textbf{WHERE} $\textit{Ssn} = \textit{Essn} \textbf{ AND } \textit{Pno} = \textit{Pnumber}$;
+
+
+\subsection{View Implementation, View Update, and Inline Views}
+Het is niet simpel om queries die verwijzen naar views effici\"ent te implementeren. Er bestaan 2 benaderingen om dit probleem aan te pakken.
+\begin{itemize}
+\item \textbf{Query modification}\\
+De query van de view wordt met algoritmes omgevormd tot een query op de onderliggende tabellen. Het grote nadeel van deze methode is dat de resulterende queries soms heel complex kunnen zijn, vooral bij views die gedefinieerd zijn door reeds complexe queries.
+\item \textbf{View materialization}\\
+Als men meerdere queries die naar een bepaalde view verwijzen, na elkaar wil uitvoeren, kan men tijdelijk de view materialiseren (opslaan als een 'echte' tabel). Hierbij moet er natuurlijk een effici\"ent systeem bedacht worden om de echte tabellen up-to-date te houden met de opgeslagen view.
+\end{itemize}
+Niet elke query die verwijst naar een view kan zinvol zijn. Bijvoorbeeld: een query die een attribuut aanpast dat in de view door de aggregaatfunctie \textbf{SUM} gegenereerd wordt, heeft geen zinvolle vertaling naar een query op een 'echte' tabel. Soms kan er ook ambigu\"iteit optreden bij het aanpassen van een view.
+
+Over het algemeen is een update op een view enkel haalbaar als deze query zonder ambigu\"iteit vertaald kan worden naar een zinvolle query op de onderliggende tabellen.
+
+
+
+\section{Schema Change Statements in SQL}
+\subsection{The DROP Command}
+Het \textbf{DROP}-commando wordt gebruikt om schema-elementen (met een naam) te verwijderen, dit zijn tabellen, domeinen of constraints. Men kan ook een schema zelf verwijderen.
+
+Er zijn 2 manieren waarop een \textbf{DROP SCHEMA} uitgevoerd kan worden.
+\begin{itemize}
+\item \textbf{CASCADE.} Alle schema-elementen en het schema zelf worden verwijderd.
+\item \textbf{RESTRICT.} Het schema wordt enkel verwijderd als het geen elementen bevat.
+\end{itemize}
+Bij \textbf{DROP TABLE} is er een analoog gedrag: bij \textbf{CASCADE} wordt de tabel verwijderd. Bij \textbf{RESTRICT} wordt de tabel enkel verwijderd als er geen \textit{referenties} naar de tabel bestaan. 
+
+
+\subsection{The ALTER Command}
+De definitie van een tabel of andere benoemde schema-elementen kan veranderd worden met het \textbf{ALTER}-commando. Er kan bijvoorbeeld een kolom toegevoegd worden aan een tabel of de naam van een kolom kan veranderd worden.
+
+\vspace{1mm}\hspace{10mm}
+\textbf{ALTER TABLE} COMPANY.EMPLOYEE
+
+\hspace{20mm}
+\textbf{DROP COLUMN} \textit{Address} \textbf{CASCADE};
+
+\vspace{1mm}\hspace{10mm}
+\textbf{ALTER TABLE} COMPANY.DEPARTMENT
+
+\hspace{20mm}
+\textbf{ALTER COLUMN} \textit{Mgr\_ssn} \textbf{SET DEFAULT} \textit{`333445555'};

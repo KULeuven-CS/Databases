@@ -1,0 +1,522 @@
+\chapter{Introduction to Database Recovery Protocols}
+\section{Recovery Concepts}
+\subsection{Recovery Outline and Categorization of Recovery Algorithms}
+Recovery from transaction 
+\begin{itemize}
+	\item Restore to the most recent \textbf{consistent} state
+	\item Information is kept by \textbf{system log}
+\end{itemize}
+\subsubsection{Typical Strategy for Recovery}
+\begin{enumerate}
+	\item Extensive damage due to catastrophic failure
+	\begin{itemize}
+		\item Recover form last archived backup
+		\item Reconstruct current state  by redoing operations of commited transaction
+		\item Commited transactions are kept by \textbf{backed up log}
+	\end{itemize}
+	\item No physical damage is done
+	\begin{itemize}
+		\item Identify changes causing inconsistencies
+		\item Undo transactions that weren't committed
+		\item Redo transactions that were committed but not properly finished 
+		\\	  (e.g. not yet written to disk)
+	\end{itemize}
+\end{enumerate}
+
+\subsubsection{Deffered Update}
+No physical update on disk until \textbf{after} a transaction is complete.
+\begin{itemize}
+	\item Updates are recorded by database until committed
+	\item Either in main memory or transaction workspace
+	\item Written to disk once committed
+\end{itemize}
+Failures before commit do no harm 
+\begin{itemize}
+	\item no UNDO necessary
+	\item REDO might be necessary:  writing may not have finished after commit
+\end{itemize}
+$\rightarrow$ \textbf{NO-UNDO/REDO Algorithm} 
+\subsubsection{Immediate Update}
+Operation may update the database on disk \textbf{before} a transaction is complete.
+\begin{itemize}
+	\item Operations have to write log on disk before executing
+	\item In case of failure before committed: UNDO from log on disk (Rollback)
+	\item Both UNDO and REDO
+\end{itemize}
+$\rightarrow$ \textbf{UNDO/REDO Algorithm}
+\subsubsection{UNDO/REDO Operations}
+\begin{itemize}
+	\item Required to be \textbf{idempotent}
+	\item Executing an operations \textbf{multiple times} has to be equivalent to executing it \textbf{once}
+	\item Whole recovery process should be \textbf{idempotent}
+\end{itemize}
+$\rightarrow$ The result of recovery from a system crash during recovery should be the same as the result of recovering when there is no crash during recovery!
+
+\subsection{Caching (Buffering) of Disk Blocks}
+Buffering
+\begin{itemize}
+	\item Disk pages are kept in main memory
+	\item Updates are written to copies in memory instead onto disk
+	\item Usually handled by OS, but database do it themselves
+\end{itemize}
+\subsubsection{Directory}
+\begin{itemize}
+	\item In-memory buffers controlled by DBMS
+	\item Directoy is used to keep track of what's in those buffers
+	\item If requested file is not in the cache, fetch in from disk and copy it cache
+	\item If cache is full
+	\begin{itemize}
+		\item \textbf{Replace} a page
+		\item \textbf{Flush} a cache buffer
+	\end{itemize}
+	\item Page replacement strategy used
+	\begin{itemize}
+		\item Least recently used (LRU)
+		\item First-in-first-out (FIFO)
+		\item Least-likely-to use
+	\end{itemize}
+\end{itemize}
+Additional information in directory
+\begin{itemize}
+	\item Dirty bit
+	\begin{itemize}
+		\item Indicates whether of not buffer has been modified
+		\item Possibly additional information (such as modifying transaction)
+		\item Only pages with dirty bit = 0 have to be written do disk when flushed
+	\end{itemize}
+	\item Pin-unpin bit
+	\begin{itemize}
+		\item Pinned page cannot be written back to disk
+		\item May be necessary for implementing recovery protocol
+	\end{itemize}
+\end{itemize}
+\subsubsection{Strategies for Flushing}
+\begin{itemize}
+	\item \textbf{In-place updating}
+	\begin{itemize}
+		\item Writes buffer to same original location on disk
+		\item Overwrites the old value of changed data
+	\end{itemize}
+	\item \textbf{Shadowing}
+	\begin{itemize}
+		\item Different disk location
+		\item Multiple versions of same data exists
+		\item Not typically used in practice
+	\end{itemize}
+\end{itemize}
+We have to types of values
+\begin{itemize}
+	\item \textbf{Before image} (BFIM): value before updating
+	\item \textbf{After image} (AFMI): value after updating
+\end{itemize}
+\subsection{Write-Ahead Logging, Steal/No-Steal, and Force/No-Foce}
+\subsubsection{Write-Ahead Logging}
+\begin{itemize}
+	\item Use of a log is necessary for in-place updating
+	\item BFIM must be recorded in log entry and flushed to disk
+	\item BFIM is flushed before AFIM is written to disk
+\end{itemize}
+$=$ \textbf{Write-Ahead Logging}
+\paragraph{Log entries}Distinguish between two types of log entry information
+\begin{itemize}
+	\item \textbf{REDO-type log}
+	\begin{itemize}
+		\item Includes the \textbf{new value} (AFIM)
+		\item Needed to \textbf{redo} the operation
+	\end{itemize}
+	\item \textbf{UNDO-type log}
+	\begin{itemize}
+		\item Includes the \textbf{old value} (BFIM)
+		\item Needed to \textbf{undo} the operation
+	\end{itemize}	
+\end{itemize}
+$\rightarrow$ Combined for \textbf{UNDO/REDO-Algorithm}
+\paragraph{Log Buffering}
+\begin{itemize}
+	\item Log is stored in log buffer in main memory
+	\item Log consists of append-only file
+	\item Last $n$ block of that file are in cache
+\end{itemize}
+$\rightarrow$ Must first be written to disk \textbf{before} the data block itself can be written back!
+\subsubsection{Steal/No-steal}
+\begin{itemize}
+	\item \textbf{No-steal approach}
+	\begin{itemize}
+		\item Cache buffer page update cannot be written to disk before transaction commits
+		\item Indicated by pin-bit
+	\end{itemize}
+	\item \textbf{Steal approach}
+	\begin{itemize}
+		\item Allows writing an updated buffer before the transaction commits
+		\item Used when buffer manager needs a buffer frame and replaces an existing page that had been updated but whose transaction had not committed.
+	\end{itemize}
+\end{itemize}
+\subsubsection{Force/No-force}
+\begin{itemize}
+	\item \textbf{Force approach}
+	\begin{itemize}
+		\item Updated pages are written to disk before transaction commits
+		\item REDO will never be needed
+	\end{itemize}
+	\item \textbf{No-force approach}
+	\begin{itemize}
+		\item The opposite, obviously
+	\end{itemize}
+\end{itemize}
+Typically a \textbf{steal/no-force} approach is used.
+\begin{itemize}
+	\item Advantage is a page of a committed transaction may still be in the buffer
+	\item Eliminates expensive IO
+\end{itemize}
+\subsubsection{Recovery Lists}
+To facilitate recovery: the DBMS may need to maintain a number of lists
+\begin{itemize}
+	\item \textbf{Active transactions}: have started but not committed
+	\item \textbf{Committed transactions}
+	\item \textbf{Aborted transactions}: since last checkpoint
+\end{itemize}
+$\rightarrow$ Maintaining those lists makes recovery more efficient!
+\subsection{Checkpoints in the System Log and Fuzzy Checkpoints}
+\subsubsection{Checkpoints}
+A checkpoint is a \textbf{list of active transactions	} that is periodically written into the log when all changed buffers are written to disk.
+\begin{itemize}
+	\item 	All transactions have their commit-entries in the log before a checkpoint
+	\item Do not have to have their write operation redone after checkpoint
+	\item List of active transactions is included in checkpoint $\rightarrow$ easily redone
+\end{itemize}
+DBMS decides on what intervals to take a checkpoint. This consists of:
+\begin{enumerate}
+	\item Suspending execution of transactions temporarily
+	\item Force-writing all changed main memory buffers to disk
+	\item Writing checkpoint-record to log and force-writing it to disk
+	\item Resuming execution
+\end{enumerate}
+$\rightarrow$ Additional info may be included, facilitating undoing in case of a rollback.
+\subsubsection{Fuzzy Checkpoints}
+Transactions may be delayed due to checkpoint taking $\rightarrow$ \textbf{fuzzy checkpointing} reduces this.
+\begin{itemize}
+	\item Transactions resumes after writing of begin-checkpoint
+	\item After step 2 $\rightarrow$ write end-checkpoint to disk
+	\item Previous checkpoint should remain valid
+	\item Pointer on disk points to previous checkpoint until end-checkpoint is reached
+\end{itemize}
+\subsection{Transaction Rollback and Cascading Roll back}
+A \textbf{rollback} is needed when a transaction fails before committing. Changed data must be changed back to its \textbf{original} state.
+\subsubsection{Cascading Rollback}
+\begin{enumerate}
+	\item Transaction T fails and rolls back
+	\item Transaction S had read data changed by T \\ $\rightarrow$ S has to be rolled back also.
+\end{enumerate}
+This can process can continue for a long time and is called \textbf{cascading roll back}.
+This can be \textbf{complex} and \textbf{time consuming} $\rightarrow$ systems are designed so that this is never needed.
+\\
+For an example: check page 792 in Database Systems (Sixth Edition)
+\subsection{Transactions Actions That Do Not Affect the Database}
+In general, there are actions that do not affect the database
+\begin{itemize}
+	\item Should not execute multiple times in case of recovery
+	\item Execute after transaction committed
+	\item Create a batch job which is executed afterwards
+\end{itemize}
+\section{NO-UNDO/REDO Recovery Base on Deffered Update}
+$\rightarrow$ Postpone updates until the transaction completes and reaches its commit point.
+\begin{itemize}
+	\item Updates are recorded to a log
+	\item Log is force-written to disk when committing
+	\item Only REDO-entries needed
+	\item Only applicable if transactions change few items
+\end{itemize}
+$\rightarrow$ Buffers will run out of space!
+\subsubsection{Protocol}
+\begin{enumerate}
+	\item A transaction cannot change the database on disk until it reaches its commit point.
+	\item A transaction does not reach its commit point untill all its REDO-type log entries are recorded in the log \textbf{and} the log buffer is written to disk.
+\end{enumerate}
+Same properties as listed above.
+\subsubsection{Multiuser Systems} Concurrency control and recovery are interrelated. Consider a system with concurrency control using 2PL. We call a possible algorithm \textbf{RDU\_M} or Recovery used Deferred Update in a Multiuser environment. \\
+\\
+\textbf{Procedure RDU\_M (NO-UNDO/REDO with checkpoints)}
+\begin{itemize}
+	\item Two lists of transactions
+	\begin{itemize}
+		\item Committed transaction T since last checkpoint: \textbf{commit list}
+		\item Active transactions T': \textbf{active list}
+	\end{itemize}
+	\item REDO all write operations of the committed transaction list from the log, \textbf{in the order they were written to the log}
+	\item Active transactions did not commit hence no action is required
+\end{itemize}
+\textbf{Procedure REDO (WRITE\_OP)}
+\begin{itemize}
+	\item Examin the log entry
+	\item Set item to the AFIM
+\end{itemize}
+For an example: check page 794 in Database Systems (Sixth Edition)
+\subsubsection{Efficiency improvements}
+If a data item X has been updated more than once by committed transactions since the last checkpoint, it is only necessary to REDO the \textbf{last update of X} from the log during recovery! \\
+$\rightarrow$ Start from the end of the log
+\subsubsection{Aborted Transactions}
+If a transaction is aborted it is simply resubmitted since it has not changed the database. This has drawbacks:
+\begin{itemize}
+	\item Limits concurrent execution
+	\item All write-locked items remain locked until commit-point is reached
+	\item Requires excessive buffer space to hold items
+\end{itemize}
+The main benefit is that a transaction operation \textbf{never has to be undone} for two reasons:
+\begin{enumerate}
+	\item A transaction does not record any changes until commit-point $\rightarrow$ never rolled back
+	\item A transaction will never read the value of an item that is written by an uncommitted transaction
+\end{enumerate}
+\section{Recovery Rechniques Based on Immediate Update}
+$\rightarrow$ Updates are \textbf{immediately} written to disk. Though this is not a requirement!
+\subsubsection{Handling Failed Transactions}
+\begin{itemize}
+	\item Undoing the effect of updates
+	\item Rolling back transactions
+	\item UNDO-type log entries are used which contain the \textbf{old value} (BFIM)
+	\item Require \textbf{steal strategy}
+\end{itemize}
+We can distinguish two main types of algorithms:
+\begin{itemize}
+	\item Updates recorded on disk before transaction commits
+	\begin{itemize}
+		\item Never need to REDO
+		\item Called \textbf{UNDO/NO-Redo recovery algorithm}
+		\item Used Force-Strategy for deciding when buffers are written to disk
+	\end{itemize}
+	\item Transaction is allowed to commit before updates are written to disk
+	\begin{itemize}
+		\item \textbf{UNDO/REDO recovery algorithm}
+		\item \textbf{Steal/No-force} strategy
+	\end{itemize}
+\end{itemize}
+\subsubsection{Concurrent execution}
+Recovery process depends on concurrency control protocol
+\begin{itemize}
+	\item RIU\_M: Recovery using Immediate Updates for a Multiuser environment
+	\item We assume checkpoints and a strict schedules
+	\item Deadlocks may occur thus requires abort and UNDO-operations
+\end{itemize}
+\textbf{Procedure RIU\_M (UNDO/REDO with checkpoints)}
+\begin{enumerate}
+	\item Use two lists maintained by the system
+	\begin{itemize}
+		\item Committed transactions
+		\item Active transactions
+	\end{itemize}
+	\item Undo all write\_item operations of \textbf{active, uncommitted} transactions using UNDO (in reverse order of log)
+	\item Redo all write\_item operations of \textbf{committed} transactions from the log in regular order
+\end{enumerate}
+Whenever an operation is redone, it's added to a list so it is not redone again.
+\\\\
+\textbf{Procedure REDO (Write\_OP)}
+\begin{enumerate}
+	\item Examine log entry and set value of X back to old value (BFIM)
+	\item Undo write\_item in \textbf{reverse} order
+\end{enumerate}
+Only one UNDO operation is needed $\rightarrow$ scan list in forward direction and apply earliest UNDO.
+
+\section{Shadow Paging}
+\begin{itemize}
+	\item Does not require use of a log in single-user environment
+	\item Log may be used in multiuser environment
+\end{itemize}
+\subsection{Before Transaction}
+\begin{itemize}
+	\item Database consists of  fixed size pages
+	\item Directory with $n$ entries with $i$th entry the $i$th page on disk
+	\item Directory is kept in main memory
+	\item When transaction begins executing the \textbf{current directory} is copied into a \textbf{shadow directory}
+	\item Shadow directory is saved on disk while active is used
+\end{itemize}
+
+\subsection{During Transaction}
+\begin{itemize}
+	\item Shadow directory is not touched during transaction
+	\item In case of write\_item, new page is created
+	\item Old page is \textbf{not} overwritten
+	\item Current directory points to new page, whereas the old one points to the previous
+	\item 
+\end{itemize}
+$\rightarrow$ For every updates page, there are \textbf{two} version. One referenced to by the shadow directory, and one by the active directory.
+
+\subsection{Recovery Process}
+\begin{itemize}
+	\item Free the modified database page $\rightarrow$ discard current directory
+	\item Previous state is available trough the shadow directory
+	\item Committing corresponds to discarding shadow directory
+\end{itemize}
+$\rightarrow$ No UNDO/REDO necessary!
+
+\subsection{Disadvantages}
+\begin{itemize}
+	\item Logs and checkpoints need to be incorporated into page for multiuser envornment
+	\item Changing location on disk $\rightarrow$ less efficient
+	\item Large directories may exist
+	\item Overhead of writing shadow directories to disk
+	\item Old page must be released $\rightarrow$ Garbage collection
+	\item Migration between directories has to be \textbf{atomic}!
+\end{itemize}
+
+\section{The Aries Recovery Algorithm}
+\begin{itemize}
+	\item Used in database related IBM products
+	\item Uses a \textbf{steal/no-force} approach
+\end{itemize}
+Based on 3 concepts:
+\begin{enumerate}
+	\item Write-ahead logging
+	\item Repeating history during REDO
+	\begin{itemize}
+		\item Retrace all actions prior to the crash
+		\item Uncommitted transactions at the time of the crash are omitted
+	\end{itemize}
+	\item Logging changes during UNDO
+	\begin{itemize}
+		\item Prevents from repeating  the completed UNDO operations
+		\item In case of restart during recovery
+	\end{itemize}
+\end{enumerate}
+
+\subsection{Analysis Phase}
+\begin{itemize}
+	\item Identifies dirty buffer pages in buffer
+	\item Appropriate location from where REDO should start is determined
+\end{itemize}
+
+\subsection{REDO Phase}
+\begin{itemize}
+	\item Reads start point for REDO
+	\item From there REDO operations are applied until end of log is reached
+	\item Only necessary REDO operations are applied
+\end{itemize}
+
+\subsection{UNDO Phase}
+\begin{itemize}
+	\item Log is scanned backwards
+	\item Operations are undone in reverse order
+\end{itemize}
+
+\subsection{Structures}
+\begin{itemize}
+	\item Log
+	\item Transaction Table
+	\item Dirty Page Table
+	\item Checkpoints
+\end{itemize}
+
+\subsection{Log Sequence Number (LSN)}
+\begin{itemize}
+	\item Monotonically increasing
+	\item Indicates the address of the log record on disk
+	\item Corresponds to specific change of some transaction
+	\item Each page will store LSN of the \textbf{last record corresponding to a change for that page}
+	\item Log is written when
+	\begin{itemize}
+		\item Updating a page (write)
+		\item Committing a transaction (commit)
+		\item Aborting a transaction (abort)
+		\item Undoing an update (undo) $\rightarrow$ compensation log record
+		\item Ending a transaction (end)$\rightarrow$ end log record
+	\end{itemize}
+\end{itemize}
+Fields in log
+\begin{itemize}
+	\item \textbf{Previous LSN}: Links the log records in reverse order for each transaction
+	\item For write record
+	\begin{itemize}
+		\item Page ID
+		\item Length of the updated item
+		\item Offset from the beginning of the page
+	\end{itemize}
+\end{itemize}
+\subsection{Tables}
+\begin{itemize}
+	\item Transaction Table
+	\begin{itemize}
+		\item Entry for each active transaction
+		\item Information such as ID, status and the LSN of the most recent log record
+	\end{itemize}
+	\item Dirty Page Table
+	\begin{itemize}
+		\item Entry for each dirty page in buffer
+		\item Includes page ID, LSN of the earliest update to that page
+	\end{itemize}
+\end{itemize}
+$\rightarrow$ Mainly used by transaction manager
+
+\subsection{Checkpoints}
+\begin{itemize}
+	\item Writing a begin\_checkpoint record
+	\item Writing an end\_checkpoint record
+	\begin{itemize}
+		\item Content of both the transaction table and Dirty Page Table are appended tot the log
+		\item Fuzzy checkpointing is used
+	\end{itemize}
+	\item Writing LSN of the begin\_checkpoint to a special file
+	\begin{itemize}
+		\item Accessed during recovery
+		\item Used to locate last checkpoint information
+	\end{itemize}
+\end{itemize}
+
+\subsection{Recovery from crash}
+\begin{itemize}
+	\item Information from the last checkpoint is first accessed trough the special file 
+	\item 
+\end{itemize}
+
+\textbf{For the detailed exaplanation of the ARIES Algorithm, refer to page 799 in Database Concepts (6th edition)}
+
+\section{Recovery in Multidatabse Systems}
+\begin{itemize}
+	\item Single transaction may need acces to multiple databases
+	\item May even be different types of databases
+	\item Recovery techniques may differ between databases
+\end{itemize}
+$\rightarrow$ \textbf{Global Recovery Manager} of \textbf{Coordinator} is needed. \\
+$\rightarrow$ Follows \textbf{two-phase commit protocol}
+\begin{itemize}
+	\item \textbf{Phase 1} 
+	\begin{itemize}
+		\item All participation database signal coordinator that their part has concluded
+		\item Coordinator sends message \textbf{prepare for commit}
+		\item Every receiving database will force-write all log records etc to disk
+		\item Answer coordinator with \textbf{ready to commit}
+		\item If write fails send cordinator \textbf{cannot commit}
+		\item Assumes a \textbf{not OK} reply if no response after a time interval
+	\end{itemize}
+	\item \textbf{Phase 2}
+	\begin{itemize}
+		\item All participants reply OK
+		\item Coordinators vote is also OK
+		\item Transaction is successful
+		\item Coordinator sends a \textbf{commit} signal
+		\item In case of failure: roll back message
+	\end{itemize}
+\end{itemize}
+$\rightarrow$ Either \textbf{all} databases commit or \textbf{all} database roll back.
+\section{Database Backup and Recovery from Catastrophic Failures}
+\begin{itemize}
+	\item Techniques so far focussed on \textbf{non-catastrophic} failures
+	\item Entries from log or shadow directories are used
+\end{itemize}
+\subsection{Handling more Catastrophic Failures}
+\begin{itemize}
+	\item Databse Backup
+	\item Whole database and log are periodically copied to cheap storage medium
+	\item The latest backup can be reloaded
+	\item Such backups may be locked in a vault for critical information
+	\begin{itemize}
+		\item Stock markets
+		\item Banking and insurance
+	\end{itemize}
+\end{itemize}
+\subsection{Increase frequency}
+\begin{itemize}
+	\item Create customary backups
+	\item Start where last complete backup ended
+	\item Smaller thus possible to create more frequently
+	\item After full recovery, redo operations noted in this backup
+\end{itemize}
+
+

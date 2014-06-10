@@ -1,0 +1,133 @@
+\chapter{Database Design Theory: Normalization Algorithms}
+
+	\section{Further Topics in Functional Dependencies: Inference Rules, Equivalence, and Minimal Cover}
+		
+		\subsection{Inference Rules for Functional Dependencies}
+		
+			Met \textit{F} wordt de verzameling van alle gespecifi\"eerde functionele afhankelijkheden in een schema R aangeduid. De afhankelijkheden die in \textit{F} zijn opgenomen hebben 				een duidelijke betekenis. In het schema R zullen echter nog functionele afhankelijkheden aanwezig zijn die niet in \textit{F} zitten. Deze afhankelijkheden kunnen van F afgeleid 				worden. 
+			
+			\begin{description}
+				\item[Definitie. ] Formeel wordt de verzameling van alle afhankelijkheden in F en al deze die kunnen afgeleid worden uit F de sluiting van F genoemd. Aangeduid als $F^+$
+			\end{description}
+			
+			Een FD X $\rightarrow$ Y wordt ge\"impliceerd door een verzameling afhankelijkheden F als X $\rightarrow$ Y geldt voor elke geldige extensie \textit{r} van R. Het is te zeggen, 				als voor een geldige extensie \textit{r} F geldt, dan moet ook X $\rightarrow$ Y gelden. Om $F^+$ op te bouwen vanuit F hebben we afleidingsregels nodig, enkele worden nu besproken. 				(F $\models X \rightarrow Y$ duidt aan de X $\rightarrow$ Y ge\"impliceerd wordt door F).
+			
+			\begin{itemize}
+				\item[IR1] (Reflexiviteitsregel): Als X $ \supseteq$ Y, dan X $\rightarrow$ Y.
+				\item[IR2] (Uitbreidingsregel) : $\lbrace X \rightarrow Y \rbrace \models XZ \rightarrow YZ$
+				\item[IR3] (Transitiviteitsregel) : $\lbrace X \rightarrow Y, Y \rightarrow Z \rbrace \models X \rightarrow Z$
+				\item[IR4] (Decompositieregel) : $\lbrace X \rightarrow YZ \rbrace \models X \rightarrow Y$
+				\item[IR5] (Verenigingsregel) : $\lbrace X \rightarrow Y, X \rightarrow Z \rbrace \models X \rightarrow YZ$
+				\item[IR6] (Pseudo-transitiviteitsregel) : $\lbrace X \rightarrow Y, WY \rightarrow Z \rbrace \models WX \rightarrow Z$
+			\end{itemize}
+			
+			Voor bewijzen van deze stellingen zie pagina (531 in de 6de editie van het handboek).
+			
+			\paragraph*{}
+			Het is bewezen, door Armstrong, dan de eerste drie afleidingsregels correct en volledig zijn. Correct houdt in dat alle afhankelijkheden die afgeleid kunnen worden ook werkelijk 				ge\"impliceerd worden. Volledig houdt in dat alle afhankelijkheden die ge\"impliceerd worden ook afgeleid kunnen worden. Deze regels noemt men de afleidingsregels van Armstrong.
+			
+			\begin{description}
+				\item[Definitie. ] Voor elke verzameling attributen X, die voorkomt als linkerlid in een functionele afhankelijkheid uit F, bepalen we de verzameling $X^+$ van attributen 						die	functioneel afhankelijk zijn van X gebaseerd op de afhankelijkheden F. $X^+$ noemen we de sluiting van X tov. F.
+			\end{description}
+			
+			Voor het algoritme om $X^+$ te bepalen, zie pagina (532).
+			
+			
+		\subsection{Equivalence of Sets of Functional Dependencies}
+			
+			\begin{description}
+				\item[Definitie. ] Een verzameling functionele afhankelijkheden F overdekt een andere verzameling afhankelijkheden E als voor elke FD in E ook in $F^+$ zit. 
+				\item[Definitie. ] Twee verzamelingen functionele afhankelijkheden F en E zijn equivalent als $E^+ = F^+$. Anders gezegd, elke FD in E kan worden afgeleid uit F en 							omgekeerd. Nog anders, E en F zijn equivalent als geldt: F overdekt E en E overdekt F.
+			\end{description}
+			
+			Om te kijken of F een verzameling E overdekt, berekenen we $X^+$ ten opzichte van F voor elke $X \rightarrow Y$ in E en dan te kijken of deze $X^+$ Y bevat. Als dit zo is voor 				elke FD in E, dan wordt E overdekt door F.
+			
+		\subsection{Minimal Sets of Functional Dependencies}
+		
+			Informeel is een minimale overdekking van een verzameling FD's E een verzameling functionele afhankelijkheden F waarvoor geldt dat elke afhankelijkheid uit E zit in 							sluiting $F^+$ van F. Hierbij komt nog dat als een FD uit F verwijdert wordt, dit niet meer zou gelden. We zeggen dat een verzameling afhankelijkheden F \textbf{minimaal} is 					als voldaan is aan volgende voorwaarden : 
+			
+			\begin{itemize}
+				\item 	Elke afhankelijk uit F heeft als rechterlid \'e\'en enkel attribuut.
+				\item 	Geen enkele afhankelijkheid X $\rightarrow$ A, kan vervangen worden door een afhankelijkheid Y $\rightarrow$ A, waar Y een echte deelverzameling is van X. Gebeurt 						dit toch, dan is de bekomen verzameling niet equivalent aan F.
+				\item 	We kunnen geen enkele afhankelijkheid uit F verwijderen en toch nog een verzameling FD's uitkomen die equivalent is aan F.
+			\end{itemize}
+			
+			\begin{description}
+				\item[Definitie. ] Een minimale overdekking van een verzameling functionele afhankelijkheden E is een minimale verzameling afhankelijkheden die equivalent is aan E. Er 						bestaat altijd minstens \'e\'en zo'n overdekking. (zie algoritme 15.2 p. 534)
+			\end{description}
+			
+			Een algoritme voor het vinden van een sleutel van een relatie, gegeven een verzameling FD's staat op pagina 535.
+			
+			\section{Properties of Relational Decompositions}
+			
+				Wanneer een relatie R door middel van decompositie opgedeeld wordt in een verzameling van relaties D = $\lbrace R_1, R_2, ... R_n\rbrace$ en hierdoor vervangen wordt, dan 						noemen we D en decompositie van R. 
+				
+				Hierbij eisen we dat elk attribuut uit R ook vertegenwoordigt wordt in D. Het is te zeggen : $ \bigcup_{i=1}^m R_i = R$. 
+				
+				\subsection{Dependency Preservation Property of a Decomposition}
+				
+					\begin{description}
+						\item[Definitie. ] Gegeven een verzameling afhankelijkheden F op R, de projectie van F op $R_i$, $\pi_{R_i}(F)$ waar $R_i$ een deelverzameling is van R, is de 									verzameling afhankelijkheden X $\rightarrow$ Y in $F^+$ zodat de attributen in X $\cup$ Y vervat zitten in $R_i$. We zeggen dat een decompositie D = $\lbrace R_1, 								R_2, ..., R_n \rbrace$ van R afhankelijkheidsbewarend is ten opzichte van F, als de unie van de projecties van F op elke $R_i$ in D equivalent is aan F. 
+					\end{description}
+					
+					\begin{description}
+						\item[Bewering 1. ] Het is altijd mogelijk een decompositie D te vinden die afhankelijkheden bewaard tov. F en waarbij elke relatie uit D in 3NF is.
+					\end{description}
+					
+				\subsection{Nonadditive (Lossless) Join Property of a Decomposition}
+				
+					\begin{description}
+						\item[Definitie. ] Een decompositie D van R heeft de lossless (nonadditive) join eigenschap ten opzichte van een verzameling afhankelijkheden F op R als, voor elke 							relatie extensie \textit{r} van R die voldoet aan F, geldt dat : *($\pi_{R_1}(r)$,...$\pi_{R_m}(r)$) = \textit{r}, met * de natuurlijke join van alle relaties in D. 						($\pi$ is hier de PROJECT operatie uit relationele algebra).
+					\end{description}
+					
+					De nonadditive join eigenschap zorgt ervoor dat bij er bij een natuurlijke join van relaties geen onechte tupels ontstaan. Voor een algoritme om te testen of een 								decompositie lossless is, zie pagina 538-539. (Zie oefenzitting 6 voor uitleg over het algoritme)
+					
+				\subsection{Testing Binary Decompositions for the Nonadditive Join Property}
+					
+					\begin{description}
+						\item[Property NJB: ] Een decomposite D = $\lbrace R_1, R_2 \rbrace$ van R heeft de lossless join eigenschap ten opzichte van een verzameling FD's F op R als en 								slechts als 
+						\begin{itemize}
+							\item De FD $((R_1 \cap R_2) \rightarrow (R_1 - R_2))$ in $F^+$ zit \textbf{OF}
+							\item De FD $((R_1 \cap R_2) \rightarrow (R_2 - R_1))$ in $F^+$ zit.
+						\end{itemize}
+					\end{description}
+					
+				\subsection{Successive Nonadditive Join Decompositions}
+				
+					\begin{description}
+						\item[Bewering 2. ] Als een decompositie D = $\lbrace R_1, R_2, ..., R_m \rbrace$ van R lossless is tov. F en een decompositie $D_i = \lbrace Q_1, Q_2, ... Q_n 								\rbrace$ van $R_i$ lossless is tov de projectie van F op $R_i$, dan is de decompositie $D_2 = \lbrace R_1, R_2, ..., R_{i-1}, Q_1, Q_2, ..., Q_n, R_{i+1}, ..., R_m 							\rbrace$ ook lossless tov. F.
+					\end{description}
+					
+			\section{Algorithms for Relational Database Schema Design}
+			
+				Er worden 3 belangrijke algoritme aangebracht en uitgelegd in het boek, heel deze sectie is belangrijk en wordt bijgevolg niet echt samengevat.
+			
+				\subsection{Dependency-Preserving Decomposition into 3NF Schemas}
+				
+					Het algoritme dat vermeld werd bij bewering 1 staat uitgelegd op pagina 542 en bespreekt hoe een relatie kan omgezet worden in een verzameling relaties die de 									functionele afhankelijkheden bewaren.
+					
+					\begin{description}
+						\item[Bewering 3. ] Elk relationeel schema dat door dit algoritme gemaakt wordt is in 3NF
+					\end{description}
+					
+				\subsection{Nonadditive Join Decomposition into BCNF Schemas}
+					
+					Een algoritme dat een decompositie van een relationeel schema oplevert die de lossless join eigenschap heeft, wordt besproken op pagina 543 en 544.
+					
+				\subsection{Dependency-Preserving and Nonadditive (Lossless) Join Decomposition into 3NF Schemas}
+					
+					Een uitbreiding van het algoritme voor afhankelijkheidsbewarende decompositie zorgt ervoor dat ook de lossless join eigenschap gegarandeert wordt. (zie p. 544-546)
+					
+			\section{About Nulls, Dangling Tuples, and Alternative Relational Designs}
+			
+				\subsection{Problems with NULL Values and Dangling Tuples}
+				
+					Wanneer de waarde NULL voorkomt in een tupel, bij een attribuut dat gebruikt wordt om de relatie te joinen met een andere, wordt dit tupel uit die join weggelaten. Dit 						levert vaak niet het gewenste effect op en kan verholpen worden door een outer join te gebruiken in plaats van een inner join.	NULLs kunnen ook een effect hebben op 							functies als SUM en AVERAGE. 
+					
+					Verbonden hieraan is het concept van hangende tupels. Als een relatie te ver wordt opgedeeld en \'e\'en entiteit voorgesteld als samenstelling van verschillende 								relaties, dan is het mogelijk dat een tupel dat behoord tot de entiteit, niet behoord tot \'e\'en of meer van deze relaties. Wanneer deze relaties vervolgens gejoined 							worden om de oorspronkelijke entiteit terug te krijgen verschijnt dit tupel niet in het resultaat, we noemen dit tupel een (dangling) hangend tupel.
+					
+				\subsection{Discussion of Normalization Algorithms and Alternative Relational Designs}
+				
+					Een van de problemen van de normalisatie algoritmes die net besproken werden, is dat telkens \textit{alle} functionele afhankelijkheden geleverd moeten worden. Bij het 						weglaten van zelfs maar \'e\'en of twee afhankelijkheden kan een fout schema gegenereerd worden. 
+					
+					Deze algoritmen zijn ook niet deterministisch, het is te zeggen afhankelijk van de volgorde waarin afhankelijkheden behandeld worden, kunnen verschillende schemas 								gemaakt worden. Sommige van deze mogelijke schemas kunnen minder gewenst zijn dan anderen. 

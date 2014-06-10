@@ -1,0 +1,129 @@
+\chapter{The Basic (Flat) Relational Model}
+
+\section{Relational Model Concepts}
+Een \textbf{relationele database} bestaat uit verschillende \textit{relaties}. 
+\begin{description}
+	\item[Mathematisch] Een tabel uit simpele lineaire rijen, ook wel eens naar een \textit{flat file} genoemd voor de simpele, lineaire structuur. Rijen hebben elk hun eigen kolom met informatie erin.
+	\item[Formeel] Formeel gezien spreken we over \textbf{tupels} i.p.v. \textit{rijen} en over \textit{attributen} i.p.v. \textit{kolommen}, elk met een \textit{domein}. De tabel wordt een \textbf{relation} genoemd.
+\end{description}
+
+\subsection{Domains, Attributes, Tuples, and Relations}
+\begin{description}
+	\item[Domein] Een domein $D$ is een verzameling van onafscheidelijke (of \textbf{atomische}) waardes, bijvoorbeeld een \textit{``Naam''} bestaande uit letters. Deze waardes zijn volgens de database niet meer te scheiden. Bij een domein hoort altijd een \textit{logische definitie}.\\
+	Elk domein heeft ook een \textbf{data type} of \textbf{formaat}. Een naam zal uit het datatype \textit{string} bestaan, dat zelf uit letters bestaat. Elke tupel zal zich aan dit domein moeten houden. De \textbf{kardinaliteit} $|D|$ van een domein is het aantal verschillende values dat het kan hebben.
+	\item[Attributen] Een rol (eigenschap) gespeeld door een domein $D$. Het domein van een attribuut $A_i$ wordt genoteerd als $\text{dom}(A_i)$.\\
+	Formeel: $t = \{(A_1, w_1), \dots, (A_n, w_n)\}$ met elke $w_i \in \text{dom}(A_i)$ of $w_i =$ \texttt{NULL}.
+	\item[Relationeel schema] Een relationeel schema $R$ is een $n$-tupel over een lijst attributen. Een tupel of rij is een object of verband tussen de attributen. De \textit{graad} of \textbf{ariteit} van $R$ stelt het aantal attributen van $R$ voor.\\
+	De relatie van een relationeel schema (\textbf{relational intension}) bestaat uit \textit{tupels} met elk dezelfde \textit{attributen} (\textbf{relational extension}).\\
+	$r(R) \subseteq ( \text{dom}(A_1) \times \dots \times \text{dom}(A_n))$ is een \textbf{instantie} (\textit{instance}) van een relatie.
+\end{description}
+
+\subsection{Characteristics of Relations}
+\begin{description}
+	\item[Ordenen van tupels] Abstract gezien hebben tupels geen volgorde. Fysiek gezien moet er wel een volgorde bestaan (voor het opslaan op de harde schijf).
+	\item[Ordenen van waardes in een tupel] De ordening van attributen (waardes) in een tupel heeft abstract gezien geen belang, toch wordt meestal een ordening meegegeven.\\
+	Een tupel kan ook gezien worden als een set van ($<$attribuut$>$,$<$waarde$>$) paren waar elk paar de waarde geeft van een mapping van een attribuut $A_i$ tot een waarde $w_i$ van $\text{dom}(A_i)$.
+	\item[Waardes van tupels] Elke waarde is steeds atomair en van de eerste normaalvorm (cfr. hoofdstuk 14). Multivalued attributen moeten voorgesteld worden met aparte relaties. Samengestelde attributen worden voorgesteld door hun afzonderlijke attributen.\\
+	Een \texttt{NULL}-waarde betekent dat het attribuut niet van toepassing is of dat de waarde onbekend is.
+	\item[Interpretatie van een relatie] Relaties kunnen gezien worden als predicaten. De waardes van elke tupel worden gezien als de waardes die aan de predicaat voldoen.\\
+Een relatie kan ook gezien worden als een declaratie van een type of \textbf{assertie}. Iedere waarde in die tupel kan dan gezien worden als een feit.
+\end{description}
+
+\subsection{Relational Model Notation}
+Een relationeel schema $R$ van graad $n$ wordt genoteerd als $R(A_1, A_2, \dots, A_n)$. Voorbeelden van relatienamen zijn $Q$, $R$ of $S$, instanties van relaties worden geschreven als $q$, $r$ of $s$. Tupels worden genoteerd als $t$, $u$ of $v$.
+
+Een $n$-tupel $t$ in een relatie $r(R)$ wordt genoteerd als $t =\, <w_1, w_2, \dots, w_n>$.
+
+Een attribuut $A$ van een relatie $R$ wordt soms genoteerd als $R.A$. De waarden van een attribuut $A_i$ worden genoteerd als $t.A_i$ of $t[A_i]$.
+
+\section{Relational Model Constraints and Relational Database Schemas}
+Er bestaan drie soorten constraints in een database.
+\begin{itemize}
+	\item \textbf{Implicit constraints:} de constraints die bij het data model horen.
+	\item \textbf{Explicit constraints:} de constraints die rechtstreeks uitgedrukt worden in de schema's van het datamodel, gespecifieerd in de \textbf{data definition language} (DDL).
+	\item \textbf{Application-based constraints:} de constraints die niet rechtstreeks in de schema's kunnen worden uitgedrukt. Ook wel \textbf{business constraints} genoemd.
+\end{itemize}
+
+\subsection{Domain Constraints}
+De \textbf{domeinrestricties} beperken de mogelijke waarden van attributen: booleans, integers, doubles, strings. Het domein van een attribuut is altijd enkelvoudig.
+
+Bijvoorbeeld: een attribuut \textit{``leeftijd''} is een geheel positief getal tussen 18 en 65. 
+
+\subsection{Key Constraints and Constraints on \texttt{NULL} values}
+Een set van tupels moet uniek zijn, twee tupels mogen dus niet exact dezelfde waarden hebben. Het gebruik van een (unieke) \textbf{key} lost dit probleem op.
+
+Als $U$ alle attributen van $R$ voorstelt, dus $U = \{A_1,\dots,A_n\}$, dan defini\"eren we de supersleutel $K \subseteq U$: de verzameling van attributen die een tupel in $R$ ondubbelzinnig maken (in elke extensie).
+
+Een \textbf{kandidaatsleutel} $K$ is een supersleutel zonder de overtollige attributen. Deze is ook uniek, er bestaat geen supersleutel $K' \subset K$. Een sleutel kan samengesteld of enkelvoudig zijn.
+
+Uit de kandidaatsleutels wordt de \textbf{primaire sleutel} gekozen, deze wordt onderlijnd in het schema. De andere kandidaatsleutels zijn de \textbf{alternatieve sleutels}, deze worden niet onderlijnd.
+
+~
+
+\noindent Er worden ook constraints vastgelegd die bepalen of een attribuut de waarde \texttt{NULL} mag bevatten.
+
+\subsection{Relational Databases and Relational Database Schemas}
+Een \textbf{relationeel databaseschema} $S$ is een set van relatieschema's $S = \{R_1, \dots, R_m\}$ en een set van \textbf{integrity constraints} \textit{IC}. Een \textbf{relationele databasetoestand} \textit{DB} van $S$ is een set van relatietoestanden \textit{DB}$\,= \{r_1, \dots, r_m\}$ waarbij elke $r_i$ de integriteitconstraints in \textit{IC} volgt.
+
+De \textbf{statica-regels} slaan op 1 toestand van \textit{DB} en gelden in elke extensie. De \textbf{dynamica-regels} slaan op toestandsovergangen en gelden voor elke overgang tussen extensies.
+
+\subsection{Integrity, Referential Integrity and Foreign Keys}
+Volgens de \textbf{entitity integrity constraint} kan een primaire sleutel nooit \texttt{NULL} zijn. Deze constraint bepaalt ook dat een tupel niet meer dan 1 keer mag voorkomen in een extensie.
+
+De \textbf{referential integrity constraint} bepaalt dat een verwijzing naar een andere tupel geldig moet zijn. Als een tupel naar een andere tupel verwijst, moet die andere ook tupel bestaan.
+
+~
+
+\noindent Een verzameling attributen \textit{FK} van $R_1$ is een \textbf{foreign key} (\textit{verwijssleutel}) dat refereert naar $R_2$ als en slechts als:
+\begin{itemize}
+	\item De attributen van \textit{FK} hebben dezelfde domeinen als de de primaire sleutelattributen \textit{PK} van relatie $R_2$.
+	\item Elke waarde van \textit{FK} in $R_1$ komt voor als de waarde van een tupel in $R_2$ of is \texttt{NULL}.\\
+	$\forall t_1 \in R_1 : t_1[\mathit{FK}] = \mathtt{NULL} \; \cup \; \exists t_2 \in R_2 :  t_1[\mathit{FK}] = t_2[\mathit{PK}]$
+\end{itemize}
+
+\noindent Een verwijssleutel kan naar een eigen relatie verwijzen, dit is dus een recursieve relatie.
+
+\subsection{Other Types of Constraints}
+\textbf{Semantic integrity constraints} zijn algemene constraints die niet opgelegd kunnen worden door de \textit{data definition language}, deze worden opgelegd door de applicaties zelf. Ook een \textbf{constraint specification language} kan hiervoor zorgen. Een voorbeeld van zo'n constraint is het maximum aantal werkuren dat een werknemer kan werken.
+
+De \textbf{functional dependency constraint} cre\"eert een functionele relatie tussen 2 sets attributen $X$ en $Y$. Een waarde van $X$ bepaalt een unieke waarde van $Y$ in alle toestanden van een relatie: $X \rightarrow Y$. Zie hoofdstukken 14 en 15.
+
+~
+
+\noindent De constraints die tot nu vernoemd werden, zijn \textbf{state constraints} omdat ze bepalen of een database zich een een geldige toestand bevindt.
+
+Een andere soort constraints zijn de \textbf{transition constraints} en bepalen welke overgangen tussen databasetoestanden geldig zijn.
+
+~
+
+\noindent Er zijn verscheidene dynamica-regels. De \textbf{autorisatieregels} bepalen welke acties een bepaalde gebruiker mag uitvoeren. Er bestaan ook \textbf{precondities} en \textbf{postcondities}.
+
+De \textbf{overgangsregels} beschrijven welke volgordes van extensies zijn toegestaan. Bijvoorbeeld: enkel loonsverhogingen zijn toegestaan, geen verlagingen.
+
+\textbf{Intrarelationele restricties} werken intern, dus binnen 1 relatie. Deze zijn meestal gemakkelijker te controleren. Hier tegenover staan de \textbf{interrelationele restricties} waarbij verschillende relaties betrokken zijn. Een voorbeeld van deze laatste soort: het salaris van een werknemer moet altijd kleiner zijn dan het loon van zijn overste.
+
+~
+
+\noindent Tegenwoordig laat men meer soorten restricties automatisch controleren door het DBMS.
+
+\section[Update Operations, Transactions and Dealing with Constraint Violations]{Update Operations, Transactions and Dealing with\\Constraint Violations}
+
+\subsection{The Insert Operation}
+Bij het invoegen van nieuwe data moet gekeken worden dat alle bovenstaande constraints niet overschreden worden. Moest er een constraint overschreden worden, zal het DBMS \textbf{cascaden}. De toevoeging wordt dan geweigerd en de gebruiker krijgt een melding.
+
+\subsection{The Delete Operation}
+Deze operatie kan alleen de \textit{referential integrity} overschrijden (verwijzing naar een onbestaande of ongeldige tupel). Het DBMS kan verscheidene dingen doen bij een overschreden constraint:
+\begin{itemize}
+	\item De verwijdering weigeren.
+	\item De verwijzende tupels ook weglaten.
+	\item De verwijzende waarden aanpassen (bijvoorbeeld op \texttt{NULL} of default zetten).
+	\item Verschillend reageren in verschillende situaties (ingesteld door de gebruiker).
+\end{itemize}
+
+\subsection{The Update Operation}
+Voornamelijk een primaire sleutel aanpassen kan problemen opleveren, er is namelijk een gevaar voor de uniciteit van de sleutel. De beste oplossing is het verwijderen en direct terug toevoegen van de tupel.
+
+Bij een wijziging van een verwijssleutel, moet ook de referenti\"ele integriteit gecontroleerd worden.
+
+\subsection{The Transaction Concept}
+Een database voert operaties meestal uit in de vorm van transactie zodat er altijd terug naar een \textit{valid state} gegaan kan worden moest de huidige operatie mislukken.

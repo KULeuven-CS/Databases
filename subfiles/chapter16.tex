@@ -1,0 +1,257 @@
+\chapter{Database File Organizations: Unordered, Ordered, and Hashed Files of Records}
+\section{Introduction}
+Er zijn 3 hoofdcategorie\"en in \textit{storage hierarchy}. 
+\begin{itemize}
+	\item \textbf{Primary storage} staat rechtstreeks in contact met de CPU en wordt gebruikt voor verwerking en opslag, bv. cache memory (SRAM), main memory (DRAM), flash memory.
+	\item \textbf{Secondary storage} is aan het systeem verbonden voor opslag, bv. magnetische schijven.
+	\item \textbf{Tertiary storage} is verwijderbaar van het systeem en wordt gebruikt voor archivering en backup, bv. optische media (CD, DVD) of magnetische banden.
+\end{itemize}
+
+
+\subsection{Memory Hierarchies and Storage Devices}
+Als je van boven naar onder gaat in de \textit{storage hierarchy}, daalt de snelheid (en prijs) en stijgt de capaciteit. \textbf{Opslagcapaciteit} wordt gemeten in kilo-, mega-, giga-, tera- en petabytes (telkens stappen van $10^3$ beginnend met 1 Kbyte $=$ 1000 bytes).
+
+\textbf{Main memory databases} hebben al hun gegevens in het hoofdgeheugen (en backup op secundair geheugen). Deze zijn handig voor realtime toepassingen.
+
+Een \textbf{jukebox} (zowel optisch als tape) kan automatisch tertiary storage binnen het systeem brengen. Dit is belangrijk voor zeer grote archieven.
+
+
+\subsection{Storage of Databases}
+\textbf{Persistent data} blijft bewaard over langere periodes. \textbf{Transient data} bestaat tijdelijk tijdens de executie van een programma. De meeste databases zijn opgeslagen als persistent data op magnetische schijven omdat databases te groot zijn voor main memory en omdat het goedkoop is.
+
+\textbf{Volatile storage} is een categorie van opslag waaronder main memory valt, er is veel kans op gegevensverlies (bv. door een stroompanne of een crash van het programma). Daarom worden databases opgeslagen op \textbf{nonvolatile storage} waaronder secundaire en tertiaire opslag vallen.
+
+~
+
+\noindent \textbf{Online storage} kan op elk moment geraadpleegd worden. \textbf{Offline storage} kan niet op elk moment geraadpleegd worden omdat het eerst geladen moet worden in het systeem. Dit gebeurt ofwel automatisch (\textit{jukebox}) of handmatig. Offline storage wordt vaak gebruikt bij archivering van data omdat tape heel goedkoop is en omdat de gegevens niet direct beschikbaar moeten zijn.
+
+~
+
+\noindent Bij het \textbf{physical database design} wordt bepaald hoe de organisatie van data wordt georganiseerd.
+
+De data voor een database is opgeslagen als \textbf{files} of \textbf{records}. Als bepaalde data nodig is, wordt deze van de disk naar main memory gekopieerd om te gebruiken.
+
+\textbf{Primary file organization} bepaalt hoe records fysisch worden opgeslagen en dus hoe ze kunnen worden aangesproken. Hier zijn meerdere keuzes zoals een \textit{heap file} (ongesorteerd), een \textit{sorted file} (sequentieel), een \textit{hashed file} of \textit{B-trees}. Bij sorted files en bij hashed files wordt er gesorteerd of gehasht op een bepaald veld: de \textit{sort key} of de \textit{hash key}.
+
+\textbf{Secondary organization} of \textbf{auxiliary access structure} bepaalt hoe records via andere velden kunnen worden aangesproken, vaak gebeurt dit via indexen.
+
+
+
+\section{Secondary Storage Devices}
+De inhoud van deze sectie (pagina \textbf{569-575}) is uitgebreid gezien in de cursussen \textit{Besturingssystemen} en \textit{SOCS}. Het belangrijkste uit deze sectie is dat disks \textbf{random access storage devices} zijn en dat het dus tijd kost om de juiste block te zoeken. Jaarlijks worden processoren 60\% sneller maar de toegangstijden van geheugen daalt maar met 7\% per jaar. Het grote knelpunt bij databasetoepassingen is dus de tijd die nodig is om gegevens op schijven te lokaliseren en te schrijven.
+
+Tapes zijn \textbf{sequential access storage devices} en hebben dus ook trage toegangstijden.
+
+
+
+\section{Buffering of Blocks}
+Het bufferen van (fysische) blokken van records is slechts effici\"ent indien er meerdere processen verschillende delen van de database nodig hebben. Terwijl een proces wordt uitgevoerd kan de buffer voor het andere proces gevuld worden en vice versa. Op deze manier heeft elk proces altijd data klaar om te verwerken.
+
+
+
+\section{Placing File Records on Disk}
+\subsection{Records and Record Types}
+In een database worden gegevens meestal opgeslagen in \textbf{records}. Elk record is een samenhorende verzameling van \textbf{data values} of \textbf{data items} die elk tot een bepaald \textbf{field} behoren. Elk field heeft een \textbf{data type} dat bepaalt welke mogelijke waarden er in dat field kunnen staan en hoe deze moeten worden gelezen. Een verzameling van field names en de overeenkomstige data types specifi\"eren de definitie van een \textbf{record type} of \textbf{record format}.
+
+Om grote data-items in een record op te slaan (bv. video), gebruikt men pointers. Deze pointers verwijzen naar \textbf{BLOB}s (Binary Large OBject) die meestal elders worden opgeslagen.
+
+
+\subsection{Files, Fixed-length Records, and Variable-Length Records}
+Een file in een databasecontext is meestal een opeenvolging van records. Er wordt onderscheid gemaakt tussen 2 groepen records in files. \textbf{Fixed-length records} hebben allemaal dezelfde lengte (hetzelfde aantal bytes). \textbf{Variable-length records} hebben verschillende lengtes. De records kunnen om volgende redenen van lengte verschillen: 
+\begin{itemize}
+	\item De records zijn allemaal van hetzelfde type maar \'e\'en of meer velden hebben een variabele lengte (\textbf{variable-length fields}).\\
+	In dit geval is er een \textbf{separator} nodig om de velden binnen een record te onderscheiden.
+
+	\item De records zijn van hetzelfde type maar enkele velden zijn optioneel, niet alle records bevatten deze \textbf{optional fields} dus.\\
+	In dit geval is er \textbf{field type code} nodig die aanduidt of een field in een record voorkomt.
+	
+	\item \textbf{Repeating field}: velden kunnen meerdere waarden hebben.\\
+	In dit geval is er een \textit{separator} nodig die de meerdere waarden onderscheidt en een \textit{separator} die het einde van het veld aanduidt.
+	
+	\item Bij een \textbf{mixed file} zijn er verschillende recordtypes.\\
+	In dit geval is er een \textbf{record type code} nodig die bepaalt welk type record er behandeld wordt.
+\end{itemize}
+
+
+\subsection{Record Blocking and Spanned versus Unspanned Records}
+Als $B$ de blokgrootte is en $R$ de grootte van fixed-length records en als $B \geqslant R$, dan vinden we dat de \textbf{blocking factor} gelijk is aan $\textit{bfr} = \left\lfloor B/R \right\rfloor$ (aantal records per blok). Deze blocking factor $\textit{bfr}$ kan gebruikt worden om het aantal blokken $b$ te berekenen die nodig zijn voor een file van $r$ records: $b = \left\lceil r \,/\, \textit{bfr} \right\rceil$.
+
+~
+
+\noindent \textbf{Spanned records} worden verspreid over meerdere blokken. Aan het einde van een vol blok staat dan een \textbf{pointer} naar het blok met het vervolg van het record. Deze techniek wordt gebruikt bij variable-length records of als $R>B$. $\textit{bfr}$ is hier het gemiddeld aantal records per blok.
+
+~
+
+\noindent \textbf{Unspanned records} worden niet verspreid over meerdere blokken, 1 record past altijd volledig in 1 blok. Hierbij is er vaak overschot aan het einde van een blok als $B$ geen veelvoud van $R$ is: $B - (\textit{bfr} \cdot R)$ vrije bytes. Deze techniek wordt gebruikt bij korte, fixed-length records. Elk record begint dan op een vaste positie in het blok.
+
+
+\subsection{Allocating File Blocks on Disk}
+\begin{itemize}
+\item \textbf{Contiguous allocation:} opeenvolgende bestandsblokken worden toegewezen aan aaneensluitende fysische blokken. Met 2 buffers kan het bestand snel overlopen worden, het invoegen van blokken is echter moeilijk.
+
+\item \textbf{Linked allocation:} elk bestandsblok bevat een pointer naar het volgende blok. Het volledige bestand overlopen gaat traag maar het bestand uitbreiden is heel simpel.
+
+\item \textbf{Clustered allocation:} clusters van aaneensluitende blokken worden geketend met pointers. Het bestand kan snel overlopen en simpel uitgebreid worden.
+ 
+\item \textbf{Indexed allocation:} 1 of meer indexblokken bevatten pointers naar de bestandsblokken.
+\end{itemize}
+
+
+\subsection{File Headers}
+De \textbf{file header} van een bestand bevat informatie voor het systeem waarop het bestand staat. Hierin staat hoe een record eruit ziet, in welke blokken het bestand zich bevindt en de ordening van het bestand.
+
+Om een record te zoeken, worden meerdere blokken naar buffers geplaatst zodat het main memory kan zoeken of het record in die blokken zit. Als het adres van een record niet gekend is, moeten alle blokken van een bestand doorzocht worden om het record te vinden (\textbf{linear search}). Om deze tijdverspilling tegen te gaan, is het belangrijk om informatie over de positie van records bij te houden.
+
+
+
+\section{Operations on Files}
+Er zijn 2 soorten operaties op bestanden: \textbf{retrieval operations} (records lokaliseren en inlezen) en \textbf{update operations} (records aanpassen, invoegen of verwijderen).
+
+Met behulp van een \textbf{simple selection condition} kunnen records gezocht worden, deze worden aangeboden door het besturingssysteem en zijn heel eenvoudig. Een DBMS moet een ingewikkelde query omzetten in deze eenvoudige selectiecriteria.
+
+~
+
+\begin{itemize}
+	\item \textbf{Open:} het bestand wordt voorbereid op lezen en schrijven, 2 buffers worden aangesteld en de file header wordt opgehaald. De pointer wijst naar het begin van het bestand.
+	\item \textbf{Close:} de buffers worden opgeruimd.
+\end{itemize}
+\textbf{Record-at-a-time operations} behandelen 1 record per operatie.
+\begin{itemize}
+	\item \textbf{Reset:} zet de file pointer terug naar het begin van het bestand.
+	\item \textbf{Find (locate):} zoek het eerste record dat aan het criterium voldoet, kopieer het blok van het record naar de buffer, zet de pointer naar dat record (het huidige record).
+	\item \textbf{Read (get):} het huidige record wordt toegekend aan een programmavariabele, soms wordt de pointer verplaatst (en moet misschien een nieuw blok ingelezen worden).
+	\item \textbf{FindNext:} zoek het volgende record in de file dat aan de conditie voldoet. Laad het blok van het record naar de buffer, zet de pointer naar dat record (het huidige record).
+	\item \textbf{Delete:} verwijder het huidige record.
+	\item \textbf{Modify:} verander het huidige record (eerst in de buffer, daarna wordt het record naar het bestand geschreven).
+	\item \textbf{Insert:} laad het juiste blok in de buffer, voeg het record toe aan dat blok en schrijf het blok weg in het bestand.
+\end{itemize}
+Er bestaan ook operaties die andere operaties combineren.
+\begin{itemize}
+	\item \textbf{Scan:} \textit{Find} of \textit{FindNext} en dan \textit{Read}.
+\end{itemize}
+\textbf{Set-at-a-time operations} behandelt een set van records behandelen per operatie.
+\begin{itemize}
+	\item \textbf{FindAll:} lokaliseert alle records die aan de conditie voldoen.
+	\item \textbf{Find $n$:} lokaliseer $n$ records die aan de conditie voldoen.
+	\item \textbf{FindOrdered:} zoek alle records in een bepaalde volgorde.
+	\item \textbf{Reorganize:} herorganiseer het bestand (bv. sortering).
+\end{itemize}
+
+~
+
+\noindent Bij bestandsverwerking bij databases zijn er enkele belangrijke parameters waarmee rekening moet worden gehouden. De \textbf{file activity} slaat op het aantal gebruikte records t.o.v. het totaal aantal records in het bestand. De \textbf{file volatility} slaat op het aantal records dat in een periode veranderd wordt t.o.v. het totaal aantal records in het bestand. De \textbf{file turnover} slaat op het aantal records dat in een periode vervangen wordt t.o.v. het totaal aantal records in het bestand. De \textbf{file growth} slaat op de toename van het aantal records in een bepaalde periode.
+
+
+
+\section{Files of Unordered Records (Heap Files)}
+Records worden in het bestand geplaatst in de orde waarin ze zijn toegevoegd. Een record toevoegen kan zeer \textit{effici\"ent} (achteraan toevoegen).
+
+Zoeken in het bestand is \textit{ineffici\"ent} (lineair). Het verwijderen van een record is ook \textit{ineffici\"ent} omdat het record eerst gezocht wordt, het blok naar het geheugen wordt verplaatst, het record verwijderd wordt en uiteindelijk het blok teruggeschreven wordt.
+
+Bovendien moet er af en toe een \textbf{reorganization} gebeuren om gaten in het bestand op te vullen.
+
+
+
+\section{Files of Ordered Records (Sorted Files)}
+Records worden fysisch geordend in een file volgens het \textbf{ordering field}. Als men de sleutel van het record gebruikt om te sorteren noemt dat veld de \textbf{ordering key} voor het bestand.
+
+Zoeken op ordering field is zeer effici\"ent met \textbf{binary search} ($\log_2 b$). Zoeken op nonordering field blijft ineffici\"ent door linear search ($b/2$). Het invoegen, aanpassen (van het ordering field) en verwijderen van records levert problemen op. Hieronder worden enkele oplossingen uitgelegd.
+\begin{itemize}
+	\item \textbf{Overflow file} (transaction file)\textbf{:} er wordt een ongeordend bestand gemaakt waar heel gemakkelijk records aan toegevoegd worden. Er is een periodieke reorganisatie nodig die de overflow file met het echte bestand samenvoegt.
+	\item \textbf{Extra ruimte voorzien} voor het toevoegen van records verspilt veel ruimte. Na een tijd is er opnieuw meer ruimte nodig.
+	\item \textbf{Na elke operatie reorganiseren} is ineffici\"ent aangezien dit veel tijd vraagt.
+\end{itemize}
+Sorted files worden niet vaak gebruikt in databases. Meestal gebruikt men een \textbf{indexed-sequential file} met een primary index. Als er gesorteerd wordt op een veld dat geen sleutel is, dan wordt zo'n bestand een \textbf{clustered file} genoemd.
+
+
+
+\section{Hashing Techniques}
+\textbf{Hash files} worden gebruikt om zeer snel de locatie van een record te bepalen. De zoekconditie moet gebaseerd zijn op het \textbf{hash field} van het record. Als dit hash field de sleutel is van het record, is het de \textbf{hash key}.
+
+Een \textbf{hash function} $h$ beeldt de waarde van het hash field af op het adres van de fysische blok waarop het record zich bevindt. Een veelgebruikte hashfunctie is $h(a) = a \bmod b$, deze wordt vaak in combinatie met andere berekeningen gebruikt.
+
+
+\subsection{Internal Hashing}
+De gegevens en de hashfunctie worden in het main memory voorgesteld (soms als een \textbf{hash table}).
+
+Een \textbf{collision} komt voor als de hashwaarde van een in te voegen record al bestaat, er moet dan een nieuwe positie gevonden worden (\textbf{collision resolution}). Dit kan op meerdere manieren.
+\begin{itemize}
+\item \textbf{Open addressing} probeert steeds volgende posities tot een lege positie is gevonden. Dit kan echter zeer traag worden door het lineair zoeken naar een lege positie.
+\item \textbf{Chaining} voegt het nieuwe record toe in een \textit{overflow location}. Op de plaats van de waarde van de hashfunctie wordt dan een pointer bijgevoegd naar die overflow location.
+\item \textbf{Multiple hashing:} meerdere hashfuncties worden berekend tot men een lege positie vindt.
+\end{itemize}
+
+
+\subsection{External Hashing for Disk Files}
+De gegevens (eventueel ook de hashfunctie) worden opgeslagen in het bestand zelf. \textbf{Buckets} bevatten pointers naar (groepen van opeenvolgende) fysische blokken. Verschillende records hebben dezelfde hashwaarde als die in hetzelfde fysieke blok zitten. Als buckets volgeraken, worden er gemeenschappelijke overflow buckets gebruikt.
+
+Bij \textbf{static hashing} wordt er een vaste ruimte gereserveerd voor het bestand. Als het bestand te groot is, is er verlies van ruimte. Als het bestand te klein is, zal er veel overloop en dus tijdverlies optreden. Na een tijdje is er ook reorganisatie nodig.
+
+Door het gebruiken van chaining is het moeilijk om een een record te zoeken via een veld dat niet het sleutelveld is. Het doorlopen van het bestand in sleutelvolgorde is ook eerder traag.
+
+
+\subsection{Hashing Techniques That Allow Dynamic File Expansion}
+\paragraph{Extendible Hashing.}
+Hier wordt gebruik gemaakt van een \textbf{directory}. Dit is een tabel waarin de bucket van een record wordt bepaald met de eerste $d$ bits (\textbf{global depth}) van de hashwaarde. Deze bits zijn niet noodzakelijk uniek zodat er eenvoudig uitbreiding mogelijk is.
+
+Voor elke bucket wordt ook de \textbf{local depth} $d'$ bijgehouden die bepaalt via welk aantal bits de inhoud van de bucket is samengesteld. Er geldt altijd dat $d' \leqslant d$.
+
+Bijvoorbeeld: in een directory (met $d=4$) verwijzen de hashwaarden die beginnen met 1000 of 1001 naar dezelfde groep van buckets die beginnen met 100. Deze groep van buckets heeft dan een lokale diepte $d'=3$. Na doorverwezen te worden naar deze groep buckets, wordt gekeken naar de andere bits van de hashwaarde om te bepalen in welke bucket de hashwaarde behoort.
+
+Bij overloop van een bucket moet maar 1 bucket in twee buckets gesplitst worden (met telkens lokale diepte $d'+1$). Als er al geldt dat $d' = d$, dan zal de waarde van $d$ met 1 verhoogd worden, hierdoor wordt de grootte van de directory verdubbeld.
+
+\textit{Figuur 16.11 op pagina \textbf{595} maakt veel duidelijk.}
+
+\paragraph{Dynamic Hashing.}
+Dit lijkt sterk op extendible hashing maar in plaats van een tabel (\textit{directory}), wordt een boomstructuur gebruikt. Afhangend van de $n$\textsuperscript{de} bit van de hashwaarde, wordt op diepte $n$ bepaald welke wijzer naar de volgende knoop of bucket gekozen moet worden.
+
+Ook hier moeten niet alle niveaus altijd bestaan en worden deze enkel gecre\"eerd indien nodig, dus bij een volle bucket.
+
+\textit{Zie figuur 16.12 op pagina \textbf{597}.}
+
+\paragraph{Linear Hashing.}
+Deze techniek probeert de veranderende grootte op te vangen zonder een extra structuur. Om dit te bereiken houdt men een reeks hashfuncties en 1 extra variabele $n$ bij.
+
+Initieel is $n=0$ en zijn er $M$ buckets ($0,1,\dots,M-1$) met bijhorende initi\"ele hashfunctie $h_i(K) = K \bmod M$. Bij de eerste overloop wordt het record in zijn bucket gestopt met \textit{chaining}. De records in bucket 0 worden dan herverdeeld over bucket 0 en de nieuwe bucket $M$ volgens $h_{i+1}(K) = K \bmod 2M$. De waarde $n$ wordt met 1 verhoogd.
+
+Bij de volgende overlopen zullen buckets $1,2,\dots$ gesplitst worden. De waarde van $n$ wordt gebruikt om te bepalen welke buckets al gesplitst zijn. Als $h_i(K) < N$, is de bucket die hoort bij $h_i(K)$ al gesplitst. Je moet dan voor dit record de functie $h_{i+1}(K)$ gebruiken.
+
+Uiteindelijk zal $n=M$, dit betekent dat de originele buckets $0,1,\dots,M-1$ gesplitst zijn. Er zijn dan $2M$ buckets, allen met de hashfunctie $h_{i+1}$. Op dit moment wordt $n$ op 0 gezet en elke nieuwe overloop zal leiden tot het gebruik van de hashfunctie $h_{i+2}(K) = K \bmod 4M$.
+
+De \textbf{file load factor} $l = r / (d \cdot N)$ kan het splitsen van buckets inperken, als $l$ klein wordt, kan je buckets weer samenvoegen. Hierbij is $r$ het aantal aanwezige records, $d$ de diepte van de buckets en $N$ het aantal buckets.
+
+
+
+\section{Other Primary File Organizations}
+\subsection{Files of Mixed Records}
+In de eerdere secties gingen we telkens uit van hetzelfde type records binnen een file. In een re\"eel systeem is dit echter zelden het geval aangezien er relaties tussen verschillende types moeten weergegeven worden. Er zijn verschillende methodes om dit te implementeren.
+
+\textbf{Logical field references} zijn verwijzingen naar een ander record, deze verwijzingen worden geschreven in het veld dat verwijst naar andere records.
+
+Een andere techniek die gebruikt wordt voor vaak opgevraagde relaties heet \textbf{physically clustering on disk}. Hierbij gaan we binnen een bestand de records clusteren per type.
+
+
+
+\section{Parallelizing Disk Access Using RAID Technology}
+\textit{Dit is gezien in het vak Besturingssystemen. Als je wil, kan je pagina \textbf{599-603} lezen.}
+
+
+
+\section{New Storage Systems}
+\subsection{Storage Area Networks}
+\textbf{SAN}s lossen enkele problemen van de toenemende vraag naar opslagcapaciteit op. 
+\begin{itemize}
+	\item Flexibel toevoegen van zowel servers als opslagapparaten in een many-to-many model.
+	\item Er zijn grote afstanden overbrugbaar: tot 10 km met fiber optic cables.
+	\item Minder onderbrekingen of storingen bij het toevoegen van nieuwe randapparaten of servers.
+\end{itemize}
+Dit kan gerealiseerd worden door een combinatie van extreem snelle verbindingen, hubs en een ingewikkeld organisatiesysteem binnen een lokaal netwerk van servers en opslagapparaten. 
+
+
+\subsection{Network-Attached Storage}
+\textbf{NAS}-systemen bestaan uit \textbf{NAS heads} en standaard opslagmedia. De NAS head werkt als een interface en kan via standaard data protocols benaderd worden (hoewel het eigenlijk een server is) over een LAN. Hierdoor kan zeer eenvoudig extra media worden toegevoegd zonder dat de servers die gebruikmaken van de NAS hier weet van hebben. Ook kan dit NAS-systeem verschillende RAID-niveaus implementeren.
+
+\subsection{iSCSI Storage Systems}
+\textbf{Internet SCSI} (Small Computer System Interface) is een derde methode om opslag van veel data eenvoudiger te maken. Concreet gebruikt iSCSI het standaard SCSI-protocol om data aan te spreken, dit protocol wordt ingekapseld in een ander protocol.
+
+Er zijn tegenwoordig 3 veelgebruikte methodes: \textbf{IP}, Fiber Channel over IP (\textbf{FCIP}) en Fiber Channel over Ethernet (\textbf{FCoE}). De data kan zich zo over het internet (IP), fiber interface (FCIP) of ethernet (FCoE) verplaatsen. Opnieuw kan zo de storage door een ander systeem beheerd worden en uitgebreid worden indien nodig. Dit is goedkoper en er kunnen lange afstanden overbrugd worden.

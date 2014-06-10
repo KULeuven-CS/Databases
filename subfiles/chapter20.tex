@@ -1,0 +1,243 @@
+\chapter{Foundations of Database Transaction Processing}
+Een \textbf{transactie} is de uitvoering van een programma dat de database raadpleegt of wijzigt.
+
+\textbf{Transaction processing systems} zijn systemen van grote databases met honderden gebruikers die gelijktijdig transacties uitvoeren. Zo'n database moet altijd beschikbaar zijn en moet een snelle responstijd hebben voor alle gebruikers.
+
+
+
+\section{Introduction to Transaction Processing}
+\subsection{Single-User versus Multiuser Systems}
+Een DBMS is \textbf{single-user} als slechts 1 gebruiker per keer het systeem kan gebruiken, meestal op persoonlijke computers.
+
+Een DBMS is \textbf{multiuser} als meerdere gebruikers het systeem gelijktijdig kunnen gebruiken, dit is mogelijk dankzij \textbf{multiprogramming} (het OS voert meerdere processen tegelijk uit).
+
+Bij \textbf{interleaved processing} behandelt 1 processor afwisselend verschillende transacties, dit model gebruiken wij. Bij \textbf{parallel processing} werken meerdere processoren in parallel.
+
+
+\subsection[Transactions, Database Items, Read and Write Operations, and DBMS Buffers]{Transactions, Database Items, Read and Write Operations,\\and DBMS Buffers}
+Een transactie is een uitvoerend programma dat een logische eenheid vormt. Het bevat 1 of meerdere database operaties: \textit{insertion}, \textit{deletion}, \textit{modification} of \textit{retrieval}.
+
+Een \textbf{read-only transaction} is een transactie die de database niet verandert. In het andere geval praat men over een \textbf{read-write transaction} (of \textit{update transaction}).
+
+~
+
+\noindent We bespreken het \textbf{database model} bij transaction processing. De database wordt voorgesteld als een verzameling van \textbf{named data items}. Een data item kan een record, een disk block of de waarde van een attribuut van een record zijn. De \textbf{granularity} stelt de grootte van een data item voor. Elk data item heeft een unieke naam om de data items van elkaar te onderscheiden.
+
+Een transactie kan bestaan uit de volgende basic database operaties.
+\begin{itemize}
+	\item \textbf{read\_item($X$)} leest een data item $X$ in en stopt deze in een variabele (meestal ook $X$).
+	\vspace{-2mm}
+	\begin{enumerate}
+		\item Vind het adres van het fysisch blok dat item $X$ bevat.
+		\item Kopieer dat blok naar een buffer in main memory (als het er nog niet in zit).
+		\item Kopieer item $X$ van de buffer naar een programma variabele.
+	\end{enumerate}		
+
+	\item \textbf{write\_item($X$)} schrijft de waarde van een variabele $X$ weg naar een database item $X$.
+	\vspace{-2mm}
+	\begin{enumerate}
+		\item Vind het adres van het fysisch blok dat item $X$ bevat.
+		\item Kopieer dat blok naar een buffer in main memory (als het er nog niet in zit).
+		\item Kopieer de programma variabele $X$ naar de juiste plaats in de buffer.
+		\item Schrijf het aangepaste blok terug op de schijf (onmiddellijk of later).
+	\end{enumerate}
+\end{itemize}
+Het DBMS houdt een \textbf{buffer cache} bij waarin enkele \textbf{data buffers} zitten. De data buffers zitten in het main memory en houden elk een database disk block bij. Hierin zitten een aantal database items die verwerkt worden. Buffers worden vervangen volgens een bepaalde \textit{buffer replacement policy}.
+
+De \textbf{read-set} van een transactie is de verzameling van alle items die gelezen worden. Items die weggeschreven worden behoren tot de \textbf{write-set} van een operatie.
+
+
+\subsection{Why Concurrency Control Is Needed}
+Er kunnen verschillende problemen optreden bij het gelijktijdig uitvoeren van transacties.
+\begin{itemize}
+	\item \textbf{The Lost Update Problem.} Een database item wordt door meerdere transacties tegelijkertijd gelezen en aangepast waardoor de waarde van het data item niet meer klopt.
+	\item \textbf{The Temporary Update (or Dirty Read) Problem.} Transactie $T_1$ verandert een data item maar de schrijfoperatie faalt, de waarde van dit data item is nu niet meer correct. Voordat dit hersteld kan worden, leest transactie $T_2$ de foute waarde in.
+	\item \textbf{The Incorrect Summary Problem.} In transactie $T_1$ wordt een aggregatiefunctie berekend van een aantal items. Als deze items worden aangepast door een transactie $T_2$ tijdens de berekening van de aggregatiefunctie, dan zal de uitkomst fout zijn.
+	\item \textbf{The Unrepeatable Read Problem.} De waarde van een data item wordt twee keer kort na elkaar ingelezen. Tussen deze 2 read-operaties wordt de waarde van het data item aangepast door een andere transactie. De 2 read-operaties lezen dus verschillende waarden.
+\end{itemize}
+\textit{Zie figuur 20.3 op pagina \textbf{727} voor schematische voorstellingen van deze problemen.}
+
+
+\subsection{Why Recovery Is Needed}
+Het DBMS moet ervoor zorgen dat een transactie ofwel volledig wordt uitgevoerd (\textbf{commited}), ofwel helemaal niet wordt uitgevoerd (\textbf{aborted}). Als een transactie faalt, mag de transactie geen veranderingen aanbrengen in de database of een effect hebben op andere transacties.
+\begin{itemize}
+	\item \textbf{A computer failure (system crash).} Een hardware, software of netwerk fout tijdens de uitvoering van de transactie.
+	\item \textbf{A transaction or system error.} De transactie faalt door een verkeerde parameter, een integer overflow, een logische programmeerfout of dergelijke in een operatie.
+	\item \textbf{Local errors or exception conditions detected by the transaction.} Een bepaalde toestand zorgt ervoor dat de transactie moet worden tegengehouden.
+	\item \textbf{Concurrency control enforcement.} De \textit{currency control method} stopt een transactie vanwege schending van \textit{serializability} of om een \textit{deadlock} op te lossen. 
+	\item \textbf{Disk failure.} Een disk block verliest data vanwege een fout bij het lezen of schrijven. Een head crash of een beschadigd spoor is ook mogelijk.
+	\item \textbf{Physical problems and catastrophes.} Stroom- of koelingsproblemen, brand, diefstal, \dots
+\end{itemize}
+
+
+
+\section{Transaction and System concepts}
+\subsection{Transaction States and Additional Operations}
+De \textbf{recovery manager} van het DBMS houdt de toestand van de transacties bij. Op die manier kan de database hersteld worden als een transactie faalt. De volgende operaties worden bijgehouden.
+\begin{itemize}
+\item \textsc{begin\_transaction}: het begin van de transactie.
+\item \textsc{read} of \textsc{write}: alle lees- en schrijfoperaties van een transactie.
+\item \textsc{end\_transaction}: de uitvoering van de transactie is gedaan. Er moet nog gecontroleerd worden dat de wijzigingen ook definitief kunnen worden toegepast op de database (\textit{committed}) of dat de transactie gestopt moet worden vanwege \textit{concurrency control}.
+\item \textsc{commit\_transaction}: de transactie is succesvol be\"eindigd, de wijzigingen kunnen worden toegepast op de database (\textit{commit}) en kunnen niet ongedaan gemaakt worden.
+\item \textsc{rollback} (of \textsc{abort}): de transactie is gefaald, alle wijzigingen worden ongedaan gemaakt.
+\end{itemize}
+Een transactie kan zich in verschillende toestanden bevinden: \textbf{active} (bij het begin van de transactie), \textbf{partially committed} (na het uitvoeren van de lees- en schrijfoperaties), \textbf{committed} (als de transactie gelukt is), \textbf{failed} of \textbf{terminated}.
+
+\textit{Figuur 20.4 op pagina \textbf{730} geeft deze verschillende staten schematisch weer.}
+
+
+\subsection{The System Log}
+Het systeem houdt een logbestand bij met daarin alle transacties die invloed hebben op items in de database. Dit bestand is een sequentieel \textit{append-only file} zodat het geen last kan hebben van een of andere failure. Het laatste deel van het bestand wordt in de \textbf{log buffer} in het main memory gehouden voordat het weggeschreven wordt naar het logbestand op de schijf.
+
+De \textbf{log records} zijn de entries van het logbestand, hierbij is $T$ een \textbf{transaction-id} om elke transactie een unieke naam te geven, $X$ duidt een database item aan.
+\vspace{-1mm}
+\begin{itemize}\addtolength{\itemsep}{-0.3\baselineskip}
+	\item \textbf{[start\_transaction, $T$]}
+	\item \textbf{[write\_item, $T$, $X$, old\_value, new\_value]}
+	\item \textbf{[read\_item, $T$, $X$]}
+	\item \textbf{[commit, $T$]}
+	\item \textbf{[abort, $T$]}
+\end{itemize}
+Ofwel wordt de transactie dan volledig ongedaan gemaakt: het logbestand wordt achterwaarts doorlopen en alle write-operaties worden ongedaan gemaakt (\textbf{undo}).
+
+Ofwel wordt de transactie volledig afgewerkt en proberen we de write-operaties te herstellen: het logbestand wordt voorwaarts doorlopen en alle write-operaties worden opnieuw uitgevoerd (\textbf{redo}).
+
+
+\subsection{Commit Point of a Transaction}
+Een transactie bereikt een \textbf{commit point} als alle operaties succesvol zijn uitgevoerd en als alle bewerking naar het logbestand zijn geschreven. Na het commit point is het resultaat van de transactie definitief, ze kan niet meer worden ongedaan gemaakt.
+
+Eerst wordt de commit op het logbestand in de log buffer genoteerd. Daarna wordt het deel in de log buffer definitief op de schijf geschreven, dit proces heet \textbf{force-writing}. Hierna bereikt de transactie het commit point.
+
+
+
+\section{Desirable Properties of Transactions}
+Transacties moeten een aantal eigenschappen bevatten, de \textbf{ACID properties}.
+\begin{itemize}
+	\item \textbf{Atomicity.} Transacties moeten ofwel volledig worden uitgevoerd, ofwel helemaal niet.
+	\item \textbf{Consistency preservation.} Een enkele transactie moet de database van de ene naar de andere consistente toestand brengen, zonder interferentie van andere transacties.
+	\item \textbf{Isolation.} Het moet lijken alsof het de enige transactie is die wordt uitgevoerd (terwijl er eigenlijk toch meerdere transacties tegelijk worden uitgevoerd).
+	\item \textbf{Durability or permanency.} De veranderingen door een transactie moeten persistent zijn.
+\end{itemize}
+
+
+
+\section{Characterizing Schedules Based on Recoverability}
+In een \textbf{schedule} (of transactierooster) worden de operaties van meerdere transacties in chronologische volgorde opgeschreven.
+
+
+\subsection{Schedules (Histories) of Transactions}
+Een schedule $S$ bestaande uit de transacties $T_1,\, T_2,\, \dots,\, T_n$ is een ordening van de volgorde waarin de operaties van de transacties worden uitgevoerd. De operaties van de verschillende transacties kunnen door elkaar voorkomen. De volgorde waarin operaties voorkomen in een transactie, moet wel behouden worden. De volgorde van de operaties in $S$ wordt de \textbf{total ordening} genoemd.
+
+~
+
+\noindent Twee operaties zijn met elkaar in conflict als ze aan de volgende 3 voorwaarden voldoen.
+\vspace{-1mm}
+\begin{enumerate}\addtolength{\itemsep}{-0.2\baselineskip}
+	\item Ze behoren tot verschillende transacties.
+	\item Ze behandelen hetzelfde data item $X$.
+	\item Minstens 1 van de operaties is een operatie van de vorm \textit{write\_item($X$)}. Er bestaan \textbf{read-write} conflicten en \textbf{write-write} conflicten.
+\end{enumerate}
+Een \textbf{complete schedule} is een schedule $S = T_1,\, T_2,\, \dots,\, T_n$ die aan de volgende condities voldoet.
+\begin{itemize}\addtolength{\itemsep}{-0.2\baselineskip}
+	\item De operaties in $S$ zijn exact die in $T_1,\, T_2,\, \dots,\, T_n$ met telkens ofwel een \textit{commit}-operatie, ofwel een \textit{abort}-operatie aan het einde van elke transactie $T_i$.
+	\item Elke 2 operaties van dezelfde transactie $T_i$ komen (ten opzichte van elkaar) in $S$ in dezelfde volgorde voor als in de volgorde waarin die 2 operaties in $T_i$ voorkomen.
+	\item Voor elke 2 conflicterende operaties, geldt dat hun volgorde eenduidig vastligt.
+\end{itemize}
+De \textbf{committed projection} $C(S)$ van een schedule $S$ bevat enkel de operaties in $S$ die behoren tot \textit{committed} transacties, dit zijn transacties $T_i$ wiens \textit{commit}-operatie $c_i$ tot $S$ behoort.
+
+
+\subsection{Characterizing Schedules Based on Recoverability}
+Een schedule $S$ is een \textbf{recoverable schedule} a.s.a. een transactie die gecommit is nooit meer ongedaan gemaakt moet worden. Dus als geen enkele transactie $T$ in $S$ commit voordat alle transacties $T'$, die een item $X$ hebben beschreven dat door $T$ wordt gelezen, zijn gecommit.
+
+Als dit niet geldt, is $S$ een \textbf{nonrecoverable schedule}.
+
+\newpage
+\noindent Een recoverable schedule is niet altijd simpel herstelbaar. Soms moet er een \textbf{cascading rollback} gebeuren, dit kan tijdrovend zijn. In een recoverable schedule $S$ gebeurt een cascading rollback als een \textit{uncommitted transaction} een rollback moet ondergaan omdat het een item las van een gefaalde transactie. Hierdoor kan dan weer een andere \textit{uncommitted transaction} last hebben.
+
+Een schedule $S$ is een \textbf{cascadeless schedule} als elke transactie in $S$ enkel items leest \textit{committed transactions}. Een cascadeless schedule is automatisch ook recoverable.
+
+~
+
+\noindent Een schedule $S$ is een \textbf{strict schedule} als elke transactie $T$ een item $X$ enkel leest of schrijft als de laatste transactie die $X$ heeft beschreven, gecommit is. Deze schedules zijn gemakkelijk te herstellen aangezien men gewoon het oorspronkelijke item dat de gefaalde transactie schreef, moet terugzetten. Een strict schedule is automatisch ook cascadeless.
+
+
+
+\section{Characterizing Schedules Based on Serializability}
+Een \textbf{serializable schedule} is altijd correct als de transacties concurrent uitgevoerd worden.
+
+
+\subsection{Serial, Nonserial, and Conflict-Serializable Schedules}
+Een schedule wordt \textbf{serial} genoemd als de transacties na elkaar worden uitgevoerd, dus zonder interferentie. Bij een \textbf{nonserial} schedule zijn er meerdere transacties tegelijk actief. Als de transacties onderling onafhankelijk zijn, dan is een serial schedule altijd correct.
+
+Bij serial schedules moeten transacties soms lang wachten als een voorgaande transactie wacht op I/O of als die voorgaande transactie te lang duurt. Dit grote nadeel weegt niet op tegen het voordeel van de correctheid, serial schedules worden dus niet gebruikt.
+
+~
+
+\noindent Een nonserial schedule $S$ met $n$ transacties is \textit{serializable} a.s.a. het \textbf{equivalent} is met een serial schedule met dezelfde $n$ transacties. Zo'n nonserial schedule is dus ook altijd correct.
+
+Twee schedules zijn \textbf{result equivalent} als ze dezelfde finale toestand van de database veroorzaken. Deze equivalentie is echter te zwak.
+
+Twee schedules zijn \textbf{conflict equivalent} als ze de conflicterende operaties in dezelfde volgorde uitvoeren. Een schedule is \textbf{conflict serializable} als het \textit{conflict equivalent} is met een serial schedule.
+
+
+\subsection{Testing for Conflict Serializability of a Schedule}
+Het volgende algoritme test of een schedule serializable is m.b.v. een \textbf{precedence graph}.
+\begin{enumerate}\addtolength{\itemsep}{-0.2\baselineskip}
+	\item Maak een knoop voor elke transactie $T_i$ in $S$ en label die knoop $T_i$.
+	\item Maak een boog van $T_i$ naar $T_j$ voor elke situatie in $S$ waarbij:
+	\vspace{-2mm}
+	\begin{itemize}
+		\item $T_j$ een leesoperatie uitvoert nadat $T_i$ een schrijfoperatie uitvoert.
+		\item $T_j$ een schrijfoperatie uitvoert nadat $T_i$ een leesoperatie uitvoert.
+		\item $T_j$ een schrijfoperatie uitvoert nadat $T_i$ een schrijfoperatie uitvoert.
+	\end{itemize}
+	\item Het schedule $S$ is serializable als er geen lussen voorkomen in de graaf.
+\end{enumerate}
+
+
+\subsection{How Serializability Is Used for Concurrency Control}
+Er kunnen \textbf{protocols} ontworpen worden om ervoor te zorgen dat alle schedules serializable zijn. In deze protocols worden regels vastgelegd die elke transactie moet volgen. Ze kunnen ook opgelegd worden door het DBMS currency control subsysteem. Dit wordt besproken in hoofdstuk 22.
+
+
+\subsection{View Equivalence and View Serializability}
+Twee schedules $S$ en $S'$ zijn \textbf{view equivalent} als er voldaan wordt aan de volgende voorwaarden.
+\vspace{-2mm}
+\begin{itemize}\addtolength{\itemsep}{-0.3\baselineskip}
+	\item Dezelfde verzameling transacties zit in $S$ en in $S'$ en de schedule $S$ en $S'$ bevatten dezelfde operaties als die transacties.
+	\item Voor elke leesoperatie $r_i(X)$ van $T_i$ in $S$ geldt: als de waarde van $X$ (gelezen door $r_i$) weggeschreven is door een schrijfoperatie $w_j(X)$ van $T_j$ (of als het de originele waarde van $X$ is), dan moet dezelfde conditie gelden voor de waarde van $X$, gelezen door $r_i(X)$ van $T_i$ in $S'$.
+	\item Als de schrijfoperatie $w_k(Y)$ van $T_k$ de laatste operatie is die het item $Y$ wegschrijft in $S$, dan moet $w_k(Y)$ van $T_k$ ook de laatste operatie zijn die $Y$ wegschrijft in $S'$.
+\end{itemize}
+Een schedule $S$ is \textbf{view serializable} als het \textit{view equivalent} is met een serial schedule.
+
+De definities van \textit{conflict serializability} en \textit{view serializability} zijn hetzelfde als de voorwaarde \textbf{constrained write assumption} (of \textbf{no blind writes}) geldt voor alle transacties in het schedule. Deze voorwaarde stelt dat elke schrijfoperatie $w_i(X)$ in $T_i$ voorgegaan moet worden door een leesoperatie $r_i(X)$ in $T_i$ en dat de waarde weggeschreven door $w_i(X)$ in $T_i$ enkel afhangt van de waarde $X$, ingelezen door $r_i(X)$.
+
+Een \textbf{blind write} is een schrijfoperatie in een transactie $T$ op een item $X$ dat niet afhangt van de waarde van $X$ en dus niet voorafgegaan wordt door een leesoperatie van $X$ in $T$.
+
+~
+
+\noindent De definitie van \textit{view serializability} is minder strikt dan die van \textit{conflict serializability} onder voorwaarde van de conditie \textbf{unconstrained write assumption}. Hierbij zijn \textit{blind writes} wel toegestaan. Testen voor \textit{view serializability} is \textit{NP-hard}, er bestaat dus geen effici\"ent algoritme voor.
+
+
+\subsection{Other Types of Equivalence of Schedules}
+\textbf{Debit-credit transactions} zijn transacties die voldoen aan minder strenge voorwaarden dan serializability omdat dit in sommige situaties niet nodig is. Zo zijn bijvoorbeeld de bewerkingen op- en aftrekken van geld bij een balans commutatief en dus maakt de volgorde van de operaties niet uit. Deze extra informatie over de transacties wordt de \textbf{semantics} genoemd.
+
+
+
+\section{Transaction Support in SQL}
+Een SQL instructie wordt als altijd atomisch beschouwd en wordt dus volledig uitgevoerd als er geen fout voorkomt. Als er wel een fout optreedt, dan blijft de gegevensbank ongewijzigd.
+
+In SQL is er geen \textit{Begin\_Transaction}-statement, alle instructies moeten echter wel een \textit{end}-statement hebben: \textsc{commit} of \textsc{rollback}. Het is mogelijk enkele eigenschappen toe te kennen aan een transactie die met het commando \textsc{set transaction} kunnen gespecificeerd worden.
+
+De optie \textbf{access mode} kan \textsc{read only} (default) of \textsc{read write} zijn.
+
+De optie \textbf{diagnostic area size} specificeert hoeveel condities er tegelijk worden bijgehouden in de \textit{diagnostic area}. Deze condities geven informatie over de $n$ meest recente SQL instructies.
+
+De optie \textbf{isolation level} kan gezet worden op \textsc{read uncommitted}, \textsc{read committed}, \textsc{repeatable read} of \textsc{serializable} (default).
+
+~
+
+\noindent Als een transactie uitgevoerd wordt op een lager niveau dan \textit{serializable}, kunnen er zich verschillende failures voordoen. Een \textbf{dirty read} bijvoorbeeld maakt gebruik van een tijdelijke aanpassing, deze aanpassing werd eerder uitgevoerd door een nog niet gecommitte transactie.
+
+Een \textbf{nonrepeatable read} gebeurt als transactie $T_1$ een bepaald item leest, een andere transactie $T_2$ dit item aanpast, als $T_1$ dan opnieuw dat item leest, zal die een andere waarde hebben.
+
+Een \textbf{phantom} is een record dat zichtbaar wordt de tweede keer dat de tabel gelezen wordt.

@@ -1,0 +1,120 @@
+\chapter{Mapping a Conceptual Design into a Logical Design}
+\section[Relational Database Design using ER-to-Relational Mapping]{Relational Database Design using ER-to-Relational\\Mapping}
+\subsection{ER-to-Relational Mapping Algorithm}
+\paragraph{Stap 1: Mapping of Regular Entity Types}~\vspace{2mm}\\
+Voor elk \textbf{normaal (sterk) entiteitstype} $E$ in het ER-schema maak je een relatie $S$ die alle \textit{simple attributes} van $E$ bevat. Kies \'e\'en van de sleutelattributen van $E$ als de primary key van $S$. Als er meerdere sleutelattributen werden ge\"identificeerd werden voor $E$, dan wordt de informatie die deze attributen beschrijft, behouden om de secondary (unieke) keys van $S$ te specifi\"eren.
+
+Relaties die gecre\"eerd werden door de mapping van entiteitstypes worden soms \textbf{entity relations} genoemd omdat elke tupel een \textit{entity instance} voorstelt.
+
+\paragraph{Stap 2: Mapping of Weak Entity Types}~\vspace{2mm}\\
+Voor elk \textbf{zwak entiteitstype} $W$ in het ER-schema met als eigenaar een entiteitstype $E$ maak je een relatie $S$ die alle simple attributes van $W$ bevat. Als extra voeg je de \textit{primary key attributes} van de relatie(s) die overeenkomen met die van eigenaar $E$ toe als \textbf{foreign key attributes} van $S$. Dit zorgt voor de mapping van de identificerende relatie type van $W$. De primary key van $S$ is de combinatie van de primary key(s) van de \textit{owner(s)} en de parti\"ele key van $W$.
+
+Als er een weak entity $W_2$ bestaat met als eigenaar ook een weak entity $W_1$, dan moet je eerst $W_1$ mappen voor $W_2$ om eerst de primary key te kunnen defini\"eren. 
+
+\paragraph{Stap 3: Mapping of Binary 1:1 Relationship Types}~\vspace{2mm}\\
+Voor elke binary 1:1 relatietype $R$ in het ER-schema identificeer je de relaties $S$ en $T$ die overeenkomen met de entiteitstypes in $R$. Er zijn drie manieren om dit te doen. De eerste is de handigste manier en moet gebruikt worden, behalve bij speciale gevallen (zie verder).
+\begin{itemize}
+ 	\item \textbf{Foreign key approach}\\
+	Kies \'e\'en van de relaties $S$ en neem als \textit{foreign key} in $S$ de \textit{primary key} van $T$. Het is beter om een entiteitstype te kiezen met \textbf{totale participatie} in $R$ voor de rol van $S$. Voeg alle \textit{simple attributes} van het 1:1 binary relatietype $R$ toe als attributen van $S$.\\
+	Voorbeeld: in \textsc{department} verwijst de foreign key \textit{``Mgr\_ssn''} naar \textit{``Ssn''} van een \textsc{employee} omdat elk departement een manager heeft. Dit vormt dan het relatietype \textsc{manages}.\\
+	Het is mogelijk om de primary key van $S$ als foreign key in $T$ de nemen. Maar in het voobeeld van \textsc{company} zou dan 98\% van de foreign keys \texttt{NULL} zijn (zie pagina \textbf{273}). Ook is het mogelijk om foreign keys te hebben in $S$ en $T$, maar dan cre\"eer je redundantie.
+
+	\item \textbf{Merged relation approach}\\
+	Hier voegen we twee entiteitstypes en het relatietype samen in een enkele relatie. Dit is mogelijk wanneer beide entiteitstypes \textit{totale participatie} hebben, want dit betekent dat de twee tabellen telkens exact hetzelfde aantal tupels zal hebben.
+  
+	\item \textbf{Cross-reference of relationship relation approach}\\
+	Bij deze methode maken we een derde relatie $R$ met als doel om de primary keys van de twee relaties $S$ en $T$ te cross-referencen. Deze methode is noodzakelijk voor M:N relaties. De relatie $R$ noemt men dan een \textbf{relationship relation} of soms ook \textbf{lookup table}. Dit omdat elke tupel in $R$ een relatie-instance representeert die gerelateerd is aan een koppel van $S$ met een koppel van $T$. Het nadeel is dat we hier een extra relatie nodig hebben en we een extra \textit{join}-operatie nodig hebben.
+\end{itemize}
+
+\paragraph{Stap 4: Mapping of Binary 1:N Relationship Types}~\vspace{2mm}\\
+Voor elk normaal, binair 1:N relatietype $R$ identificeer je de relatie $S$ die het \textit{participerende entiteitstype} aan de $N$-kant voorstelt. $T$ stelt het entiteitstype aan de 1-kant voor.
+
+Voeg in $S$ een \textit{foreign key} toe die verwijst naar de primary key van de relatie $T$. Dit doen we omdat elke entity instance aan de $N$-kant gerelateerd wordt aan maximum 1 entity instance van de 1-kant. Voeg alle \textit{simple attributes} van het 1:N relatietype toe als attributen van $S$.
+
+In het voorbeeld verwijst de foreign key \textit{``Dno''} in \textsc{employee} naar de primary key \textit{``Dnumber''} van \textsc{department}. Dit moet de relatie \textsc{works\_for} voorstellen.
+
+\paragraph{Stap 5: Mapping of Binary M:N Relationship Types}~\vspace{2mm}\\
+Voor elk binary M:N relatietype $R$ cre\"eer je een nieuwe relatie $S$ die $R$ representeert. Neem als \textit{foreign key} attributen in $S$ de primary keys van de \textit{deelnemende entiteitstypes},  de combinatie van deze foreign keys zal de primary key van S vormen. Voeg ook alle \textit{simple attributes} van $R$ toe als attributen van S.
+
+Merk op dat we een M:N relatietype niet kunnen voorstellen door 1 foreign key in \'e\'en van de deelnemende relaties. We moeten dus opnieuw een \textbf{relationship relation} $S$ maken.
+
+Voorbeeld: de foreign keys \textit{``Essn''} en \textit{``Pno''} in het \textsc{works\_on}-relatietype verwijzen naar de primary keys van \textsc{employee} en \textsc{project}. Deze foreign keys vormen de primary key van \textsc{works\_on}.
+
+\paragraph{Stap 6: Mapping of Multivalued Attributes}~\vspace{2mm}\\
+Cre\"eer voor elk multivalued attribuut $A$ een nieuwe relatie $S$ met daarin een attribuut dat overeenkomt met $A$. In $S$ zit ook een verwijssleutel $K$ die het entiteitstype voorstelt dat $A$ als multivalued attribuut heeft. De primary key van $S$ is de combinatie van $A$ en $K$.
+
+Voorbeeld: we maken voor het meerwaardig attribuut \textit{``Locations''} een relatie \textsc{dept\_locations} met daarin een foreign key \textit{``Dnumber''} dat verwijst naar het departement waar \textit{``Locations''} bijhoort.
+
+\paragraph{Stap 7: Mapping of $N$-ary Relationship Types}~\vspace{2mm}\\
+Voor elk $n$-ary relatietype $R$ (met $n > 2$) maak je een nieuwe relatie $S$ die $R$ voorstelt. Neem als foreign key attributes in $S$ de primary keys van de deelnemende entiteitstypes. Voeg ook alle \textit{simple attributes} van het $n$-ary relatietype toe als attributen van $S$. De primary key van $S$ is de combinatie van alle foreign keys.
+
+
+
+\subsection{Discussion and Summary of Mapping for ER Model Constructs}
+In een relationeel schema worden relatietypes niet expliciet voorgesteld, ze worden voorgesteld met twee attributen $A$ en $B$. E\'en hiervan is een primary key, de andere een foreign key (over hetzelfde domein) in de twee relaties $S$ en $T$. Twee tupels in $S$ en $T$ zijn gerelateerd als ze beide dezelfde waarde hebben voor $A$ en $B$.
+
+Bij de binary 1:1 of 1:N relatietypes is er meestal \'e\'en enkele \textit{join}-operatie nodig. Bij het M:N relatietype zijn er 2 \textit{join}-operaties nodig. Verder zijn er voor een $n$-ary relatietype $n$ \textit{join}-operaties nodig om de relatie instances volledig te materialiseren.
+\begin{center}
+\begin{tabular}{l|l}
+\textbf{ER model}				& \textbf{Relationeel model} \\ \hline
+Entiteitstype					& Entiteitsrelatie \\
+1:1 of 1:N relatietype			& Foreign key (of \textit{relationship relation}) \\
+M:N relatietype					& Relationship relation en 2 foreign keys \\
+$n$-ary relatietype				& Relationship relation en $n$ foreign keys \\
+Enkelvoudig attribuut			& Attribuut \\
+Samengesteld attribuut			& Verzameling enkelvoudige attributen \\
+Meerwaardig attribuut			& Relatie en een foreign key \\
+Value set						& Domein \\
+Key attribuut					& Primaire (of secundaire) sleutel
+\end{tabular}
+\end{center}
+
+
+\section{Mapping EER Model Constructs to Relations}
+\subsection{Mapping of Specialization or Generalization}
+We kunnen een extra stap maken voor het mappen van specialisaties of generalisaties.
+
+\paragraph{Stap 8: Options for Mapping Specialization or Generalization}~\vspace{2mm}\\ 
+Zet elke specialisatie met $m$ subklassen $\{S_1, \dots, S_m\}$ en een superklasse $C$ om tot relatieschema's. Hierbij zijn $\{k, a_1, \dots, a_n\} $ de attributen van $C$ en is $k$ de primary key. Er zijn meerdere opties.
+
+\begin{itemize}
+	\item \textbf{Option 8A: Multiple relations --- superclass and subclasses}\\
+	Maak een relatie $L$ voor $C$ met $\text{attr}(L) = \{k, a_1, a_2, \dots, a_n\}$ en met de primary key $\mathit{PK}(L) = k$.\\
+	Maak ook relaties $L_i$ voor elke subklasse $S_i$ (met $1 \leqslant i \leqslant m$). Er geldt dan dat $\mathit{PK}(L_i) = k$ en dat $\text{attr}(L_i) = \{k\} \cup \{\, \text{attr}(S_i)\, \}$.\\
+	Deze optie werkt voor elke specialisatie.
+
+	\item \textbf{Option 8B: Multiple relations --- subclass relations only}\\
+	Maak een relatie $L_i$ voor elke subklasse $S_i$, met $1 \leqslant i \leqslant m$. Er geldt ook dat $\mathit{PK}(L_i) = k$ en dat $\text{attr}(L_i) = \{\, \text{attr}(S_i) \,\} \cup \{k, a_1, \dots, a_n\}$.\\
+	Deze optie werkt enkel voor specialisaties waarvan de subklassen \textbf{disjunct} en \textbf{totaal} zijn (elke entity in de superklasse moet tot minstens 1 van de subklassen behoren). Bij een niet-totale specialisatie is er verlies van gegevens. Bij een niet-disjunctie specialisatie is er redundantie.
+  
+	\item \textbf{Option 8C: Single relation with one type attribute}\\
+	Maak \'e\'en relatie $L$ met $\text{attr}(L) = \{k, a_1, a_2, \dots, a_n\} \cup \{\, \text{attr}(S_1) \,\} \cup \dots \cup \{\, \text{attr}(S_m) \,\} \cup \{t\}$ en met primary key $\mathit{PK}(L) = k$. Het attribuut $t$ noemt men een \textbf{type attribute} (of \textit{discrimating attribute}) waarvan de waarde aanduidt tot welke subklasse een tupel behoort. Men laat $t$ weg als de specialisatie predikaatgedefinieerd is.\\
+	Deze optie werkt enkel voor specialisaties waarvan de subklasses \textbf{disjunct} zijn. Er is een gevaar voor veel \texttt{NULL}-waarden als er veel specifieke attributen in de subklassen zitten.
+
+	\item \textbf{Option 8D: Single relation with multiple type attributes}\\
+	Maak 1 relatie $L$ met $\text{attr}(L) = \{k, a_1, \dots, a_n\} \cup \{\text{attr}(S_1)\} \cup \dots \cup \{\text{attr}(S_m)\} \cup \{t_1, \dots, t_m\}$ en met primary key $\mathit{PK}(L) = k$. Elke $t_i$ (met $1 \leqslant i \leqslant m$) is een \textit{Booleaans} attribuut die aanduidt of een tupel tot een subklasse $S_{i}$ behoort of niet.\\
+	Deze optie wordt gebruikt voor specialisaties waarvan de subklasses elkaar \textbf{overlappen}. Ook hier is er een gevaar voor veel \texttt{NULL}-waarden.
+\end{itemize}
+
+\noindent Opties 8A en 8B kunnen \textbf{multiple-relation options} genoemd worden omdat er voor elke subklasse een nieuwe relatie wordt gemaakt (bij 8A zelfs een nieuwe relatie voor de superklasse).
+
+De opties 8C en 8D worden dan \textbf{single-relation options} genoemd omdat er telkens maar 1 nieuwe relatie wordt gemaakt.
+
+\textit{Lees eventueel pagina \textbf{279-281}, hier worden de opties in detail en met voorbeelden uitgelegd.}
+
+
+\subsection{Mapping of Shared Subclasses (Multiple Inheritance)}
+Een gedeelde subklasse is een subklasse die behoort tot meerdere superklassen, er is sprake van \textbf{multiple inheritance}. Deze superklassen moeten allemaal hetzelfde key-attribuut hebben omdat we anders de subklasse modelleren als een \textbf{categorie} (\textit{union type}).
+
+\textit{Zie figuur 8.6 op pagina \textbf{281} voor een voorbeeld hiervan (met figuur 7.26 op pagina \textbf{237}).}
+
+
+\subsection{Mapping of Categories (Union Types)}
+We voegen een extra stap toe aan de procedure om categorie\"en te kunnen mappen. Een categorie (of union type) is een subklasse van de \textit{unie} van twee of meer superklassen. Deze superklassen kunnen verschillende keys hebben omdat ze behoren tot verschillende entiteitstypes.
+
+\textit{Zie figuur 8.7 op pagina \textbf{282} voor een voorbeeld hiervan (met figuur 7.26 op pagina \textbf{237}).}
+
+\paragraph{Stap 9: Mapping of Union Types (Categories)}~\vspace{2mm}\\
+Bij deze stap is het gebuikelijk om een nieuw key-attribuut te maken, genaamd een \textbf{surrogate key}. We maken een relatie aan die correspondeert met de categorie en voegen alle attributen van de categorie toe aan deze relatie. De primary key van de relatie is dan de surrogate key. We voegen ook de surrogate key toe als \textit{foreign key} in elke relatie die correspondeert met een superklasse van de categorie. Dit om de overeenkomst in waardes tussen de surrogate key en de primary key van elke superklasse te specifi\"eren.
+
+Voor een categorie waarbij de superklasses dezelfde key hebben, is een surrogate key niet nodig.
