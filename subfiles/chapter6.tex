@@ -41,7 +41,7 @@ Hierbij is $\pi$ dus het symbool voor \textsc{project}. De generieke vorm van ee
 \[ \pi_X(R) = \pi_\text{{\textless}attributenlijst{\textgreater}}(R) \]
 De attributenlijst is de lijst van attributen die we willen opvragen van de relatie $R$, met komma's tussen de individuele attributen.
 
-Als er attributen opgevraagd worden die geen \textit{key} zijn, is de kans groot dat er duplicaten optreden. De \textsc{project}-operatie verwijdert deze duplicaten en geeft dus een lijst met \textbf{unieke tupels} terug. Moesten duplicaten niet verwijderd worden, zou het resultaat geen tupel zijn maar een \textit{multiset} of \textit{bag}. In het formele model is dit niet toegelaten, in SQL wel.
+Als er attributen opgevraagd worden die geen \textit{key} zijn, is de kans groot dat er duplicaten optreden. De \textsc{project}-operatie verwijdert deze duplicaten en geeft dus een lijst met \textbf{unieke tupels} terug. Moesten duplicaten niet verwijderd worden, zou het resultaat geen relatie zijn maar een \textit{multiset} of \textit{bag}. In het formele model is dit niet toegelaten, in SQL wel.
 
 ~
 
@@ -192,9 +192,9 @@ De \textsc{join}-operatie (symbool: $\bowtie$) wordt gebruikt om gerelateerde tu
 \vspace{-2mm}
 \begin{align*}
 &\textsc{dept\_mgr} \leftarrow \textsc{department} \,\bowtie_{\,\text{Mgr\_ssn} \,=\, \text{Ssn}} \textsc{employee}\\
-&\textsc{result} \leftarrow \pi_{\,\text{Dname, Lname, Fname}}(\textsc{dept\_mgr})
+&\textsc{result} \leftarrow \pi_{\,\text{Dname, Lname, Fname}}(\textsc{dept\_mgr})\\
 \end{align*}
-In de eerste query worden de tabellen \textsc{departement} en \textsc{employee} gejoind met de conditie $\textit{Mgr\_ssn}=\textit{Ssn}$. We krijgen dus in \textsc{dept\_mgr} een lijst van alle departementen met voor elk departement ook de departementsmanager. Daarna volgt een \textsc{rename}-operatie.
+In de eerste query worden de tabellen \textsc{departement} en \textsc{employee} gejoind met de conditie $\textit{Mgr\_ssn}=\textit{Ssn}$. We krijgen dus in \textsc{dept\_mgr} een lijst van alle departementen met voor elk departement ook de \textsc{employee}-informatie van zijn departementsmanager. Hieruit selecteren we met een \textsc{project}-operatie de departementsnaam en de achter- en voornaam van de departementsmanager.
 
 Het verschil tussen het Carthesisch product ($\times$) en de \textsc{join}-operatie ($\bowtie$) is dat bij de \textsc{join}-operatie direct een conditie meegegeven kan worden.
 
@@ -203,7 +203,7 @@ Het verschil tussen het Carthesisch product ($\times$) en de \textsc{join}-opera
 \noindent Een generieke \textsc{join}-operatie heeft de volgende vorm (met selectiecriterium $F$ en relaties $R$, $S$):
 \vspace{-2mm}
 \[ R \,\bowtie_F S = R \,\bowtie_{\text{{\textless}conditie{\textgreater}}} S = \sigma_F(R \times S) \]
-Stel $R$ heeft $n$ tupels en $S$ heeft $m$ tupels, dan zal de \textsc{join} tussen $R$ en $S$ als resultaat $n+m$ tupels hebben. Ook hier kunnen $\{ \wedge, \vee, \neg \}$ gebruikt worden om condities samen te voegen.
+Stel $R$ heeft $n$ tupels en $S$ heeft $m$ tupels, dan heeft een \textsc{join} tussen $R$ en $S$ als resultaat tussen de $0$ en $n \cdot m$ tupels. Als de \textsc{join}-conditie voor geen enkele combinatie van tupels uit $R$ en $S$ voldaan is, dan zal de \textsc{join} $0$ tupels bevatten. Andersom, als de conditie voor elke combinatie voldaan is, dan zal de \textsc{join} $n*m$ tupels bevatten. Ook hier kunnen $\{ \wedge, \vee, \neg \}$ gebruikt worden om condities samen te voegen.
 
 Een conditie is een \textbf{theta-join} als in $F = C_1 \wedge \dots \wedge C_n$ elke $C_k$ van de vorm $A_i \; \theta \; B_j$ is. Hierbij geldt dat $\theta \in \{=, <, >, \leqslant, \geqslant, \neq \}$ en dat $\text{dom}(A_i) = \text{dom}(B_j)$.
 
