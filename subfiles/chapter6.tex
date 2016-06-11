@@ -17,18 +17,19 @@ Het sigma-symbool ($\sigma$) wordt hier gebruikt om \textsc{select} aan te duide
 \end{align*}
 De {\textless}vergelijking{\textgreater} gebruikt meestal een van de volgende operatoren: $\{=, <, >, \leqslant, \geqslant, \neq \}$. Condities kunnen samengesteld worden met de operatoren $\{\wedge, \vee, \neg\}$ om meervoudige formules te maken.
 
-~
+
 
 \noindent De \textsc{select}-operator is \textbf{unair}, hij wordt dus toegepast op een enkele relatie. De \textsc{select}-operator is ook \textbf{commutatief}, voor het resultaat maakt het dus niet uit in welke volgorde ze uitgevoerd worden. Dit kan wel een verschil maken in performantie. Er geldt dus:
 \vspace{-2mm}
-\[ \sigma_{C_1} \left( \sigma_{C_2} \left( \dots \left( \sigma_{C_n} \left( r \right) \right) \dots \right) \right) = \sigma_{C_1 \,\wedge\, C_2 \,\wedge\, \dots \,\wedge\, C_n}(r) \]
+\[
+\sigma_{C_1} \left( \sigma_{C_2} \left( \dots\relax \left( \sigma_{C_n} \left( r \right) \right) \dots \right) \right) = \sigma_{C_1 \,\wedge\, C_2 \,\wedge\, \dots \,\wedge\, C_n}(r)
+\]
 In SQL wordt de \textsc{select}-conditie meestal gespecifieerd in het \textsc{where}-gedeelte. Hieronder staat een voorbeeld van een \textsc{select}-operatie en de bijhorende SQL-query.
 \vspace{-2mm}
 \[ \sigma_{(\text{Dno}\,=\,4) \; \wedge \; (\text{Salary}\,>\,25000)}(\textsc{employee}) \]
 \indent \textbf{SELECT} *\\
 \indent \textbf{FROM} EMPLOYEE\\
 \indent	\textbf{WHERE} $\textit{Dno}=4$ \textbf{AND} $\textit{Salary}>25000$
-
 
 \subsection{The PROJECT Operation}
 Als we een relatie als een tabel voorstellen, kiest de \textsc{select}-operatie enkele \textit{rijen} (tupels) hieruit.
