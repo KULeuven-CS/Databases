@@ -24,7 +24,12 @@ Een \textbf{relationele database} bestaat uit verschillende \textit{relaties}.
 	\item[Ordenen van waardes in een tupel] De ordening van attributen (waardes) in een tupel heeft abstract gezien geen belang, toch wordt meestal een ordening meegegeven.\\
 	Een tupel kan ook gezien worden als een set van ($<$attribuut$>$,$<$waarde$>$) paren waar elk paar de waarde geeft van een mapping van een attribuut $A_i$ tot een waarde $w_i$ van $\text{dom}(A_i)$.
 	\item[Waardes van tupels] Elke waarde is steeds atomair en van de eerste normaalvorm (cfr. hoofdstuk 14). Multivalued attributen moeten voorgesteld worden met aparte relaties. Samengestelde attributen worden voorgesteld door hun afzonderlijke attributen.\\
-	Een \texttt{NULL}-waarde betekent dat het attribuut niet van toepassing is of dat de waarde onbekend is.
+	Een \texttt{NULL}-waarde heeft drie mogelijke betekenissen. 
+	\begin{enumerate}
+		\item De waarde is onbekend.
+		\item De waarde bestaat maar is niet beschikbaar.
+		\item De waarde is niet van toepassing (is ongedefini\"eerd.)
+	\end{enumerate}
 	\item[Interpretatie van een relatie] Relaties kunnen gezien worden als predicaten. De waardes van elke tupel worden gezien als de waardes die aan de predicaat voldoen.\\
 Een relatie kan ook gezien worden als een declaratie van een type of \textbf{assertie}. Iedere waarde in die tupel kan dan gezien worden als een feit.
 \end{description}
